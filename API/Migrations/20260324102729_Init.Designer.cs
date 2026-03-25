@@ -100,7 +100,7 @@ namespace ManagerStudent.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Task", b =>
+            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
                 {
                     b.Property<int>("TaskId")
                         .ValueGeneratedOnAdd()
@@ -148,7 +148,7 @@ namespace ManagerStudent.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("TasksItem");
                 });
 
             modelBuilder.Entity("ManagerStudent.Entities.TaskTag", b =>
@@ -386,20 +386,20 @@ namespace ManagerStudent.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Task", b =>
+            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
                 {
                     b.HasOne("ManagerStudent.Entities.Category", "Category")
-                        .WithMany("Tasks")
+                        .WithMany("TasksItem")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ManagerStudent.Entities.Task", "ParentTask")
+                    b.HasOne("ManagerStudent.Entities.TaskItem", "ParentTask")
                         .WithMany("SubTasks")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("API.Entities.User", "User")
-                        .WithMany("Tasks")
+                        .WithMany("TasksItem")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -419,7 +419,7 @@ namespace ManagerStudent.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ManagerStudent.Entities.Task", "Task")
+                    b.HasOne("ManagerStudent.Entities.TaskItem", "TaskItem")
                         .WithMany("TaskTags")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -427,7 +427,7 @@ namespace ManagerStudent.Migrations
 
                     b.Navigation("Tag");
 
-                    b.Navigation("Task");
+                    b.Navigation("TaskItem");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -487,12 +487,12 @@ namespace ManagerStudent.Migrations
 
                     b.Navigation("Tags");
 
-                    b.Navigation("Tasks");
+                    b.Navigation("TasksItem");
                 });
 
             modelBuilder.Entity("ManagerStudent.Entities.Category", b =>
                 {
-                    b.Navigation("Tasks");
+                    b.Navigation("TasksItem");
                 });
 
             modelBuilder.Entity("ManagerStudent.Entities.Tag", b =>
@@ -500,7 +500,7 @@ namespace ManagerStudent.Migrations
                     b.Navigation("TaskTags");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Task", b =>
+            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
                 {
                     b.Navigation("SubTasks");
 

@@ -2,8 +2,8 @@
 {
     public enum TaskStatus
     {
-        Completed,
+        Todo,
         InProgress,
-        Todo
+        Completed
     }
 }
