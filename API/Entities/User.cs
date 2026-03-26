@@ -1,5 +1,4 @@
-﻿using ManagerStudent.Entities;
-using Task = ManagerStudent.Entities.Task;
+﻿using Task = API.Entities.Task;
 
 namespace API.Entities
 {

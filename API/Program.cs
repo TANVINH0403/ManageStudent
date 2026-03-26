@@ -1,5 +1,5 @@
+using API.Data;
 using API.Dependency;
-using ManagerStudent.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace API
@@ -21,7 +21,7 @@ namespace API
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddApplicationServices();
-
+            builder.Services.AddJwtAuthDenpendency(builder.Configuration);
             var app = builder.Build();
             // Configure the HTTP request pipeline.
 
@@ -32,7 +32,7 @@ namespace API
             }
             app.MapControllers();
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();   
 
             app.Run();

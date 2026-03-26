@@ -1,14 +1,13 @@
-﻿using API.Dtos.Response;
-using ManagerStudent.Entities;
-using Task = ManagerStudent.Entities.Task;
+﻿using API.Dtos.Task;
+using Task = API.Entities.Task;
 
 namespace API.Helpers
 {
     public static class TaskMapper
     {
-        public static TaskDto ToDto(Task task)
+        public static TaskResponseDto ToDto(Task task)
         {
-            return new TaskDto
+            return new TaskResponseDto
             {
                 TaskId = task.TaskId,
                 TaskName = task.TaskName,

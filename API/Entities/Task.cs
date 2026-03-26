@@ -1,8 +1,7 @@
-﻿using API.Entities;
-using ManagerStudent.Enum;
-using TaskStatus = ManagerStudent.Enum.TaskStatus;
+﻿using API.Enum;
+using TaskStatus = API.Enum.TaskStatus;
 
-namespace ManagerStudent.Entities
+namespace API.Entities
 {
     public class Task
     {

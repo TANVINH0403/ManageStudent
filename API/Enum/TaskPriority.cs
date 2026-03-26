@@ -1,4 +1,4 @@
-﻿namespace ManagerStudent.Enum
+﻿namespace API.Enum
 {
     public enum TaskPriority
     {

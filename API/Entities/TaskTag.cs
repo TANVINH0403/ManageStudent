@@ -1,4 +1,4 @@
-﻿namespace ManagerStudent.Entities
+﻿namespace API.Entities
 {
     public class TaskTag
     {

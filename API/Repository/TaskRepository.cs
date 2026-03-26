@@ -1,8 +1,9 @@
-﻿using API.Interfaces;
-using ManagerStudent.Data;
+﻿using API.Data;
+using API.Entities;
+using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using NPOI.Util;
-using Task = ManagerStudent.Entities.Task;
+using System.Threading.Tasks;
 namespace API.Repository
 {
     public class TaskRepository : ITaskRepository
@@ -13,11 +14,20 @@ namespace API.Repository
         {
             _context = context;
         }
+        public async System.Threading.Tasks.Task AddAsync(Entities.Task task)
+        {
+            await _context.Tasks.AddAsync(task);
+        }
 
-
-        public IQueryable<Task> GetAllTasks()
+        public IQueryable<Entities.Task> GetAllTasks()
         {
             return _context.Tasks;
         }
+
+        public  System.Threading.Tasks.Task SaveChangesAsync()
+        {
+            return  _context.SaveChangesAsync();
+        }
+
     }
 }

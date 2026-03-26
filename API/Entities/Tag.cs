@@ -1,6 +1,4 @@
-﻿using API.Entities;
-
-namespace ManagerStudent.Entities
+﻿namespace API.Entities
 {
     public class Tag
     {

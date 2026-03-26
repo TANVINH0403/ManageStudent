@@ -1,10 +1,10 @@
-﻿using ManagerStudent.Entities;
-using ManagerStudent.Enum;
-using TaskStatus = ManagerStudent.Enum.TaskStatus;
+﻿using API.Enum;
 
-namespace API.Dtos.Response
+using TaskStatus = API.Enum.TaskStatus;
+
+namespace API.Dtos.Task
 {
-    public class TaskDto
+    public class TaskResponseDto
     {
         public int TaskId { get; set; }
         public string TaskName { get; set; }

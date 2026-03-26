@@ -1,11 +1,11 @@
-﻿
-using Task = ManagerStudent.Entities.Task;
+﻿using API.Entities;
+using Tasks = API.Entities.Task;
 
 namespace API.Interfaces
 {
     public interface ITaskRepository
     {
-        IQueryable<Task> GetAllTasks();
-
+        IQueryable<Tasks> GetAllTasks();
+        System.Threading.Tasks.Task AddAsync(Tasks task);
     }
 }

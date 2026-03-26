@@ -1,9 +1,8 @@
-﻿using API.Dtos.Response;
-using Task = ManagerStudent.Entities.Task;
+﻿using API.Dtos.Task;
 namespace API.Interfaces
 {
     public interface ITaskService
     {
-        Task<List<TaskDto>> GetAllTaskAsync();
+        Task<List<TaskResponseDto>> GetAllTaskAsync();
     }
 }
