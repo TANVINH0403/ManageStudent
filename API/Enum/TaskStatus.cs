@@ -1,9 +1,9 @@
-﻿namespace ManagerStudent.Enum
+﻿namespace API.Enum
 {
     public enum TaskStatus
     {
-        Completed,
+        Todo,
         InProgress,
-        Todo
+        Completed
     }
 }

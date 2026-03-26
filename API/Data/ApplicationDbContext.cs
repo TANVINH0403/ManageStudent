@@ -1,10 +1,9 @@
 ﻿using API.Entities;
-using ManagerStudent.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Task = ManagerStudent.Entities.Task;
+using Task = API.Entities.Task;
 
-namespace ManagerStudent.Data
+namespace API.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
