@@ -15,37 +15,52 @@ namespace API.Service.TaskService
         private readonly ITagRepository _tag;
         private readonly ICategoryRepository _category;
 
-        public CreateTaskHandler(TaskCreationValidator validator, IUnitOfWork uow, ITaskRepository taskRepository, ICategoryRepository categoryRepository)
+        public CreateTaskHandler(TaskCreationValidator validator, IUnitOfWork uow, ITaskRepository task, ITagRepository tag, ICategoryRepository category)
         {
             _validator = validator;
             _uow = uow;
-            _task = taskRepository;
-            _category = categoryRepository;
+            _task = task;
+            _tag = tag;
+            _category = category;
         }
 
         public async Task<Entities.Task> Handler(TaskCreationRequestDto request, int userId)
         {
             var errors = _validator.Validate(request);
-            if(errors.Any(errors => errors != null))
+            if(errors.Any())
             {
                 throw new Exception(string.Join("; ", errors));
             };
+
+
 
             var category = await _category.GetCategoryByNameAsync(request.CategoryName, userId);
             if(category == null)
             {
                 category = new Category
                 {
-                    CategoryName = request.CategoryName,
+                    CategoryName = request.CategoryName.Trim(),
                     UserId = userId
                 };
 
                 await _category.AddAsync(category);
+                await _uow.SaveChangesAsync();
+            }
+
+            if (request.ParentId.HasValue) 
+            {
+                if (request.ParentId.Value == 0)
+                    throw new Exception("Invalid ParentId");
+                var parent = await _task.GetByIdAsync(request.ParentId.Value, userId);
+                if(parent == null)
+                {
+                    throw new Exception("Parent not found or User not found");
+                }
             }
 
             var task = new Entities.Task
             {
-                TaskName = request.TaskName,
+                TaskName = request.TaskName.Trim(),
                 Description = request.Description,
                 DueDate = request.DueDate,
                 Priority = request.Priority,
@@ -62,12 +77,13 @@ namespace API.Service.TaskService
 
                 foreach(var tagName in request.TagNames)
                 {
-                    var tag = await _tag.GetTagByNameAsync(tagName, userId);
+                    var nomalized = tagName.Trim().ToLower();
+                    var tag = await _tag.GetTagByNameAsync(nomalized, userId);
                     if(tag == null)
                     {
                         tag = new Tag
                         {
-                            TagName = tagName,
+                            TagName = nomalized,
                             CreatedAt = DateTime.UtcNow,
                             UserId = userId
                         };
@@ -79,8 +95,6 @@ namespace API.Service.TaskService
                     });
                 }
             }
-
-           
 
             await _task.AddAsync(task);
             await _uow.SaveChangesAsync();

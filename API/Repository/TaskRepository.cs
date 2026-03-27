@@ -24,6 +24,15 @@ namespace API.Repository
             return _context.Tasks;
         }
 
+        public async Task<Entities.Task?> GetByIdAsync(int taskId, int userId)
+        {
+            return await _context.Tasks
+                .Include(x => x.TaskTags)
+                    .ThenInclude(xx => xx.Tag)
+                .Include(t => t.Category)
+                .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
+        }
+
         public  System.Threading.Tasks.Task SaveChangesAsync()
         {
             return  _context.SaveChangesAsync();

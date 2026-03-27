@@ -1,13 +1,16 @@
 ﻿using API.Dtos.Task;
 using API.Interfaces;
 using API.Service.TaskService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TaskController : ControllerBase
     {
         private readonly ILogger<TaskController> _logger;
@@ -31,8 +34,16 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] TaskCreationRequestDto request)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(userIdClaim == null)
+            {
+                return Unauthorized();
+            }
+
+            int userId = int.Parse(userIdClaim);
+
             // Implementation for creating a task will go here
-            var userId = 4;
             try
             {
                 var task = await _createTaskHandler.Handler(request, userId);
