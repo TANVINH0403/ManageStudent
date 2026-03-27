@@ -1,6 +1,7 @@
 ﻿using API.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 using Task = API.Entities.Task;
 
 namespace API.Data
@@ -63,8 +64,6 @@ namespace API.Data
                 .WithMany(t => t.Tasks)
                 .HasForeignKey(t => t.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-
             #endregion
         }
     }

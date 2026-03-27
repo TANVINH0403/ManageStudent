@@ -6,6 +6,7 @@ namespace API.Interfaces
     public interface ITaskRepository
     {
         IQueryable<Tasks> GetAllTasks();
+        Task<Entities.Task?> GetByIdAsync(int taskId, int userId);
         System.Threading.Tasks.Task AddAsync(Tasks task);
     }
 }

@@ -1,5 +1,8 @@
-﻿namespace API.Entities
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace API.Entities
 {
+    [Index(nameof(TagName), nameof(UserId), IsUnique = true)]
     public class Tag
     {
         public int TagId { get; set; }
