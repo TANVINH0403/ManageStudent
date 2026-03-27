@@ -1,4 +1,5 @@
 ﻿using API.Data;
+using API.Dtos.Task;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -33,10 +34,14 @@ namespace API.Repository
                 .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
         }
 
+        public async Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId)
+        {
+            return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
+        }
+
         public  System.Threading.Tasks.Task SaveChangesAsync()
         {
             return  _context.SaveChangesAsync();
         }
-
     }
 }

@@ -16,18 +16,27 @@ namespace API.Controllers
         private readonly ILogger<TaskController> _logger;
         private readonly ITaskService _taskService;
         private readonly CreateTaskHandler _createTaskHandler;
+        private readonly UpdateTaskHandle _updateTask;
 
-        public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler)
+        public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler, UpdateTaskHandle updateTask)
         {
             _logger = logger;
             _taskService = taskService;
             _createTaskHandler = createTaskHandler;
+            _updateTask = updateTask;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllTasks()
         {
-            var result = await _taskService.GetAllTaskAsync();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userIdClaim == null)
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim);
+
+            var result = await _taskService.GetAllTaskAsync(userId);
             return Ok(result);
         }
 
@@ -36,7 +45,7 @@ namespace API.Controllers
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if(userIdClaim == null)
+            if (userIdClaim == null)
             {
                 return Unauthorized();
             }
@@ -58,6 +67,39 @@ namespace API.Controllers
             {
                 _logger.LogError(ex, "Error creating task");
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("{taskId}")]
+        public async Task<IActionResult> UpdateTask([FromBody] TaskUpdateRequestDto request, int taskId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized();
+            }
+
+            int userId = int.Parse(userIdClaim);
+            try
+            {
+                var result = await _updateTask.UpdateTaskAsync(taskId, userId, request);
+                if (!result)
+                {
+                    return NotFound(new
+                    {
+                        message = "Task Not Found"
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    ex.Message
+                });
             }
         }
     }

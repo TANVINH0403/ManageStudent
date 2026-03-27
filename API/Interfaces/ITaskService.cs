@@ -3,6 +3,6 @@ namespace API.Interfaces
 {
     public interface ITaskService
     {
-        Task<List<TaskResponseDto>> GetAllTaskAsync();
+        Task<List<TaskResponseDto>> GetAllTaskAsync(int userId);
     }
 }
