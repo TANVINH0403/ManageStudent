@@ -13,6 +13,8 @@ namespace API.Dtos.Task
         public TaskStatus Status { get; set; }
         public TaskPriority Priority { get; set; }
         public string CategoryName { get; set; }
+        public int? ParentId { get; set; }
+        public List<TaskResponseDto> SubTasks { get; set; }
         public List<string> Tags { get; set; }
     }
 }

@@ -19,6 +19,11 @@ namespace API.Repository
             await _context.Categories.AddAsync(category);
         }
 
+        public async Task<Category?> GetByIdAsync(int categoryId, int userId)
+        {
+            return await _context.Categories.FirstOrDefaultAsync(c => c.CategoryId == categoryId && c.UserId == userId);
+        }
+
         public async Task<Category?> GetCategoryByNameAsync(string name, int userId)
         {
             return await _context.Categories

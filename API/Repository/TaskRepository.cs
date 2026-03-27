@@ -1,7 +1,9 @@
 ﻿using API.Data;
+using API.Dtos.Task;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using NPOI.OpenXmlFormats.Wordprocessing;
 using NPOI.Util;
 using System.Threading.Tasks;
 namespace API.Repository
@@ -19,6 +21,11 @@ namespace API.Repository
             await _context.Tasks.AddAsync(task);
         }
 
+        public void DeleteRange(List<Entities.Task> tasks)
+        {
+            _context.Tasks.RemoveRange(tasks);
+        }
+
         public IQueryable<Entities.Task> GetAllTasks()
         {
             return _context.Tasks;
@@ -33,10 +40,26 @@ namespace API.Repository
                 .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
         }
 
+        public async Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId)
+        {
+            return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
+        }
+
+        public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)
+        {
+            return await _context.Tasks
+                .Where(t => t.ParentId == parentId)
+                .ToListAsync();
+        }
+
+        public void Remove(Entities.Task task)
+        {
+            _context.Tasks.Remove(task);
+        }
+
         public  System.Threading.Tasks.Task SaveChangesAsync()
         {
             return  _context.SaveChangesAsync();
         }
-
     }
 }

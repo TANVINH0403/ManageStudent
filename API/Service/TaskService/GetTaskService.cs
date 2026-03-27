@@ -11,21 +11,24 @@ namespace API.Service.TaskService
         {
             _repo = repo;
         }
-        public async Task<List<TaskResponseDto>> GetAllTaskAsync()
+        public async Task<List<TaskResponseDto>> GetAllTaskAsync(int userId)
         {
-            return await _repo.GetAllTasks()
-                  .Select(t => new TaskResponseDto
-                  {
-                      TaskId = t.TaskId,
-                      TaskName = t.TaskName,
-                      Description = t.Description,
-                      DueDate = t.DueDate,
-                      Status = t.Status,
-                      Priority = t.Priority,
-                      CategoryName = t.Category.CategoryName,
-                      Tags = t.TaskTags.Select(tt => tt.Tag.TagName).ToList()
-                  })
-                  .ToListAsync();
+            var query = _repo.GetAllTasks()
+         .Where(t => t.UserId == userId && t.ParentId == null);
+
+            return await query
+                .Select(t => new TaskResponseDto
+                {
+                    TaskId = t.TaskId,
+                    TaskName = t.TaskName,
+                    Description = t.Description,
+                    DueDate = t.DueDate,
+                    Status = t.Status,
+                    Priority = t.Priority,
+                    CategoryName = t.Category.CategoryName,
+                    Tags = t.TaskTags.Select(tt => tt.Tag.TagName).ToList()
+                })
+                .ToListAsync();
         }
     }
 }
