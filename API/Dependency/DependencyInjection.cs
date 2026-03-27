@@ -24,6 +24,7 @@ namespace API.Dependency
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<TokenService>();
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
+            services.AddScoped<UpdateTaskHandle>();
             return services;
         }
     }
