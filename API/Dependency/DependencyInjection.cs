@@ -27,8 +27,32 @@ namespace API.Dependency
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
             services.AddScoped<UpdateTaskHandle>();
             services.AddScoped<DeleteTaskHandle>();
+            services.AddScoped<UpdateStatusHanlde>();
 
             services.AddScoped<DeleteTaskHandle>();
+
+
+
+
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                    .WithOrigins("http://127.0.0.1:5500")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+                });
+            });
+
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters
+                    .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
 
             return services;
         }

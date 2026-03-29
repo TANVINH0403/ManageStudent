@@ -15,7 +15,7 @@ namespace API.Helpers
                 DueDate = task.DueDate,
                 Status = task.Status,
                 Priority = task.Priority,
-                CategoryName = task.Category.CategoryName,
+                CategoryId = task.Category.CategoryId,
                 Tags = task.TaskTags?
                             .Select(tt => tt.Tag.TagName)
                             .ToList() ?? new List<string>()
