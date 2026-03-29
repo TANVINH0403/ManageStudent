@@ -14,18 +14,26 @@ namespace API.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ILogger<TaskController> _logger;
-        private readonly ITaskService _taskService;
+        private readonly GetTaskService _getTaskService;
         private readonly CreateTaskHandler _createTaskHandler;
         private readonly UpdateTaskHandle _updateTask;
         private readonly DeleteTaskHandle _deleteTask;
+        private readonly GetTaskByIdHandle _getTaskById;
 
-        public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler, UpdateTaskHandle updateTask, DeleteTaskHandle deleteTask)
+        public TaskController(ILogger<TaskController> logger, 
+            GetTaskService getTaskService,
+            CreateTaskHandler createTaskHandler, 
+            UpdateTaskHandle updateTask, 
+            DeleteTaskHandle deleteTask,
+            GetTaskByIdHandle getTaskById
+            )
         {
             _logger = logger;
-            _taskService = taskService;
+            _getTaskService = getTaskService;
             _createTaskHandler = createTaskHandler;
             _updateTask = updateTask;
             _deleteTask = deleteTask;
+            _getTaskById = getTaskById;
         }
 
         [HttpGet]
@@ -38,10 +46,29 @@ namespace API.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            var result = await _taskService.GetAllTaskAsync(userId);
+            var result = await _getTaskService.GetAllTaskAsync(userId);
             return Ok(result);
         }
 
+        [HttpGet("{taskId}")]
+        public async Task<IActionResult> GetTaskbyId(int taskId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if(userIdClaim == null)
+            {
+                return Unauthorized();
+            }
+
+            int userId = int.Parse(userIdClaim);
+
+            var result = await  _getTaskById.GetTaskByIdAsync(taskId, userId);
+            if(result == null)
+            {
+                return NotFound();
+            }
+            return Ok(result);
+        }
 
         //[HttpGet("tree")]
         //public async Task<IActionResult> GetTaskTree()

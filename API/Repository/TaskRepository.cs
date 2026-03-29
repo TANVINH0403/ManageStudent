@@ -34,6 +34,7 @@ namespace API.Repository
         public async Task<Entities.Task?> GetByIdAsync(int taskId, int userId)
         {
             return await _context.Tasks
+                .Include(x => x.SubTasks)
                 .Include(x => x.TaskTags)
                     .ThenInclude(xx => xx.Tag)
                 .Include(t => t.Category)
@@ -44,6 +45,7 @@ namespace API.Repository
         {
             return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
         }
+
         public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)
         {
             return await _context.Tasks
