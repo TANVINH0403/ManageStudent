@@ -17,6 +17,7 @@ namespace API.Controllers
         private readonly ITaskService _taskService;
         private readonly CreateTaskHandler _createTaskHandler;
         private readonly UpdateTaskHandle _updateTask;
+<<<<<<< HEAD
         private readonly DeleteTaskHandle _deleteTask;
         public TaskController(ILogger<TaskController> logger,
             ITaskService taskService, 
@@ -24,12 +25,19 @@ namespace API.Controllers
             UpdateTaskHandle updateTask,
             DeleteTaskHandle deleteTask
             )
+=======
+
+        public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler, UpdateTaskHandle updateTask)
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
         {
             _logger = logger;
             _taskService = taskService;
             _createTaskHandler = createTaskHandler;
             _updateTask = updateTask;
+<<<<<<< HEAD
             _deleteTask = deleteTask;
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
         }
 
         [HttpGet]
@@ -125,6 +133,7 @@ namespace API.Controllers
                 });
             }
         }
+<<<<<<< HEAD
 
 
         [HttpDelete("{taskId}")]
@@ -145,5 +154,7 @@ namespace API.Controllers
         }
 
 
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
     }
 }

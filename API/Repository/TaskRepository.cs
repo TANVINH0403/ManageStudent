@@ -45,6 +45,7 @@ namespace API.Repository
             return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
         }
 
+<<<<<<< HEAD
         public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)
         {
             return await _context.Tasks
@@ -57,6 +58,8 @@ namespace API.Repository
             _context.Tasks.Remove(task);
         }
 
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
         public  System.Threading.Tasks.Task SaveChangesAsync()
         {
             return  _context.SaveChangesAsync();

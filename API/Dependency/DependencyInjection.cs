@@ -25,7 +25,10 @@ namespace API.Dependency
             services.AddScoped<TokenService>();
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
             services.AddScoped<UpdateTaskHandle>();
+<<<<<<< HEAD
             services.AddScoped<DeleteTaskHandle>();
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
             return services;
         }
     }
