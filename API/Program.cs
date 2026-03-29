@@ -32,9 +32,10 @@ namespace API
             }
             app.MapControllers();
             app.UseHttpsRedirection();
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
-            app.UseAuthorization();   
-
+            app.UseAuthorization();
+            app.MapControllers();
             app.Run();
         }
     }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Service.TaskService
 {
-    public class GetTaskService : ITaskService
+    public class GetTaskService 
     {
         private readonly ITaskRepository _repo;
         public GetTaskService(ITaskRepository repo)

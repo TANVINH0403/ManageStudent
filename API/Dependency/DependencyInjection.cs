@@ -13,7 +13,8 @@ namespace API.Dependency
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             
-            services.AddScoped<ITaskService, GetTaskService>();
+            services.AddScoped<GetTaskService>();
+            services.AddScoped<GetTaskByIdHandle>();
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<ICategoryRepository, CategoryRepository>();
