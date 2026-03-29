@@ -26,6 +26,9 @@ namespace API.Dependency
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
             services.AddScoped<UpdateTaskHandle>();
             services.AddScoped<DeleteTaskHandle>();
+
+            services.AddScoped<DeleteTaskHandle>();
+
             return services;
         }
     }

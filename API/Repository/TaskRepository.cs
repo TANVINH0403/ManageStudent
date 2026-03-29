@@ -44,6 +44,7 @@ namespace API.Repository
         {
             return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
         }
+
         public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)
         {
             return await _context.Tasks

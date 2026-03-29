@@ -14,6 +14,7 @@ namespace API.Service.TaskService
         public async Task<List<TaskResponseDto>> GetAllTaskAsync(int userId)
         {
             return await _repo.GetAllTasks()
+                .Where(t =>  t.UserId == userId && t.ParentId == null)
                   .Select(t => new TaskResponseDto
                   {
                       TaskId = t.TaskId,
