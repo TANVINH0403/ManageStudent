@@ -17,13 +17,27 @@ namespace API.Controllers
         private readonly ITaskService _taskService;
         private readonly CreateTaskHandler _createTaskHandler;
         private readonly UpdateTaskHandle _updateTask;
+<<<<<<< HEAD
+        private readonly DeleteTaskHandle _deleteTask;
+        public TaskController(ILogger<TaskController> logger,
+            ITaskService taskService, 
+            CreateTaskHandler createTaskHandler, 
+            UpdateTaskHandle updateTask,
+            DeleteTaskHandle deleteTask
+            )
+=======
 
         public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler, UpdateTaskHandle updateTask)
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
         {
             _logger = logger;
             _taskService = taskService;
             _createTaskHandler = createTaskHandler;
             _updateTask = updateTask;
+<<<<<<< HEAD
+            _deleteTask = deleteTask;
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
         }
 
         [HttpGet]
@@ -39,6 +53,23 @@ namespace API.Controllers
             var result = await _taskService.GetAllTaskAsync(userId);
             return Ok(result);
         }
+
+
+        //[HttpGet("tree")]
+        //public async Task<IActionResult> GetTaskTree()
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        //    if (string.IsNullOrEmpty(userIdClaim))
+        //        return Unauthorized();
+
+        //    var userId = int.Parse(userIdClaim);
+
+        //    var result = await _taskService.GetAllTaskAsync(userId);
+
+        //    return Ok(result);
+        //}
+
 
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] TaskCreationRequestDto request)
@@ -102,5 +133,28 @@ namespace API.Controllers
                 });
             }
         }
+<<<<<<< HEAD
+
+
+        [HttpDelete("{taskId}")]
+        public async Task<IActionResult> DeleteTask(int taskId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value!;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+            var userId = int.Parse(userIdClaim);
+
+            await _deleteTask.DeleteTaskAsync(taskId, userId);
+            return Ok(new
+            {
+                message = "Delete Successfully"
+            });
+        }
+
+
+=======
+>>>>>>> 6789bcee4fea4b723a9c081e56203f4b6424b49f
     }
 }

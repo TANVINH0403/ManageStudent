@@ -13,22 +13,19 @@ namespace API.Service.TaskService
         }
         public async Task<List<TaskResponseDto>> GetAllTaskAsync(int userId)
         {
-            var query = _repo.GetAllTasks()
-         .Where(t => t.UserId == userId);
-
-            return await query
-                .Select(t => new TaskResponseDto
-                {
-                    TaskId = t.TaskId,
-                    TaskName = t.TaskName,
-                    Description = t.Description,
-                    DueDate = t.DueDate,
-                    Status = t.Status,
-                    Priority = t.Priority,
-                    CategoryName = t.Category.CategoryName,
-                    Tags = t.TaskTags.Select(tt => tt.Tag.TagName).ToList()
-                })
-                .ToListAsync();
+            return await _repo.GetAllTasks()
+                  .Select(t => new TaskResponseDto
+                  {
+                      TaskId = t.TaskId,
+                      TaskName = t.TaskName,
+                      Description = t.Description,
+                      DueDate = t.DueDate,
+                      Status = t.Status,
+                      Priority = t.Priority,
+                      CategoryName = t.Category.CategoryName,
+                      Tags = t.TaskTags.Select(tt => tt.Tag.TagName).ToList()
+                  })
+                  .ToListAsync();
         }
     }
 }
