@@ -18,12 +18,8 @@ namespace API.Controllers
         private readonly CreateTaskHandler _createTaskHandler;
         private readonly UpdateTaskHandle _updateTask;
         private readonly DeleteTaskHandle _deleteTask;
-        public TaskController(ILogger<TaskController> logger,
-            ITaskService taskService, 
-            CreateTaskHandler createTaskHandler, 
-            UpdateTaskHandle updateTask,
-            DeleteTaskHandle deleteTask
-            )
+
+        public TaskController(ILogger<TaskController> logger, ITaskService taskService, CreateTaskHandler createTaskHandler, UpdateTaskHandle updateTask, DeleteTaskHandle deleteTask)
         {
             _logger = logger;
             _taskService = taskService;
@@ -143,7 +139,5 @@ namespace API.Controllers
                 message = "Delete Successfully"
             });
         }
-
-
     }
 }
