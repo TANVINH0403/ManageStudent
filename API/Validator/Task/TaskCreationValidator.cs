@@ -29,15 +29,14 @@ namespace API.Validator.Task
             {
                 errors.Add("Invalid DueDate.");
             }
-
-            //Category
-            if (!string.IsNullOrWhiteSpace(request.CategoryName) && request.CategoryName.Length > 100)
+            //category
+            if (!request.CategoryId.HasValue)
             {
-                errors.Add("CategoryName  max length = 100.");
+                throw new Exception("CategoryId is required");
             }
-            
+
             //Tag
-            if(request.TagNames != null && request.TagNames.Any(x => x.Length > 50))
+            if (request.TagNames != null && request.TagNames.Any(x => x.Length > 50))
              {
                 errors.Add("Each TagName max length = 50.");
             }

@@ -11,7 +11,7 @@ namespace API.Dtos.Task
         public string Description { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskPriority Priority { get; set; }
-        public string CategoryName { get; set; }
+        public int? CategoryId { get; set; }
         public int? ParentId { get; set; }
         public List<string> TagNames { get; set; } = new();
     }

@@ -23,7 +23,7 @@ namespace API.Service.TaskService
                       DueDate = t.DueDate,
                       Status = t.Status,
                       Priority = t.Priority,
-                      CategoryName = t.Category.CategoryName,
+                      CategoryId = t.Category.CategoryId,
                       Tags = t.TaskTags.Select(tt => tt.Tag.TagName).ToList()
                   })
                   .ToListAsync();

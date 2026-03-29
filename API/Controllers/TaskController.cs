@@ -19,13 +19,15 @@ namespace API.Controllers
         private readonly UpdateTaskHandle _updateTask;
         private readonly DeleteTaskHandle _deleteTask;
         private readonly GetTaskByIdHandle _getTaskById;
+        private readonly UpdateStatusHanlde _updateStatus;
 
         public TaskController(ILogger<TaskController> logger, 
             GetTaskService getTaskService,
             CreateTaskHandler createTaskHandler, 
             UpdateTaskHandle updateTask, 
             DeleteTaskHandle deleteTask,
-            GetTaskByIdHandle getTaskById
+            GetTaskByIdHandle getTaskById,
+            UpdateStatusHanlde updateStatus
             )
         {
             _logger = logger;
@@ -34,6 +36,7 @@ namespace API.Controllers
             _updateTask = updateTask;
             _deleteTask = deleteTask;
             _getTaskById = getTaskById;
+            _updateStatus = updateStatus;
         }
 
         [HttpGet]
@@ -166,5 +169,28 @@ namespace API.Controllers
                 message = "Delete Successfully"
             });
         }
+
+        [HttpPatch("{taskId}/status")]
+        public async Task<IActionResult> UpdateStatus(int taskId, [FromBody] UpdateStatusDto request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+            var userId = int.Parse(userIdClaim);
+
+            var result = await _updateStatus.UpdateStatusAsync(taskId, userId, request.status);
+            if (!result)
+            {
+                return NotFound();
+            }
+
+            return Ok(new
+            {
+                Message = "Update Status succesfull"
+            });
+        }
+
     }
 }

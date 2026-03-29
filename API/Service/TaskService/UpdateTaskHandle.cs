@@ -42,15 +42,17 @@ namespace API.Service.TaskService
                 task.DueDate = request.DueDate.Value;
             }
 
+            if (request.Priority.HasValue && !System.Enum.IsDefined(typeof(API.Enum.TaskPriority), request.Priority.Value))
+            {
+                throw new Exception("Invalid priority");
+            }
+
+
             if (request.Priority.HasValue)
             {
                 task.Priority = request.Priority.Value;
             }
 
-            if (request.Priority == null || !System.Enum.IsDefined(typeof(API.Enum.TaskPriority), request.Priority))
-            {
-                throw new Exception("Invalid priority");
-            }
 
             if (request.CategoryId.HasValue)
             {
@@ -75,23 +77,25 @@ namespace API.Service.TaskService
                 task.ParentId = request.ParentId.Value;
             }
 
+            if (request.Status.HasValue && !System.Enum.IsDefined(typeof(API.Enum.TaskStatus), request.Status.Value))
+            {
+                throw new Exception("Invalid status");
+            }
+
             if (request.Status.HasValue)
             {
                 task.Status = request.Status.Value;
 
                 if (task.Status == Enum.TaskStatus.Completed)
                 {
-                    task.CompletedAt = DateTime.Now;
+                    task.CompletedAt = DateTime.UtcNow;
                 }
                 else
                 {
                     task.CompletedAt = null;
                 }
             }
-            if (request.Status == null || !System.Enum.IsDefined(typeof(API.Enum.TaskStatus), request.Status))
-            {
-                throw new Exception("Invalid status");
-            }
+           
             await _uow.SaveChangesAsync();
             return true;
         }

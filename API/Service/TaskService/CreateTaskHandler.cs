@@ -32,20 +32,27 @@ namespace API.Service.TaskService
                 throw new Exception(string.Join("; ", errors));
             };
 
-
-
-            var category = await _category.GetCategoryByNameAsync(request.CategoryName, userId);
-            if(category == null)
+            Category? category = null;
+            if (request.CategoryId.HasValue)
             {
-                category = new Category
-                {
-                    CategoryName = request.CategoryName.Trim(),
-                    UserId = userId
-                };
+                category = await _category.GetByIdAsync(request.CategoryId.Value, userId);
 
-                await _category.AddAsync(category);
-                await _uow.SaveChangesAsync();
+                if (category == null)
+                    throw new Exception("Category không tồn tại hoặc không thuộc user");
             }
+
+            //var category = await _category.GetCategoryByNameAsync(request.CategoryName, userId);
+            //if(category == null)
+            //{
+            //    category = new Category
+            //    {
+            //        CategoryName = request.CategoryName.Trim(),
+            //        UserId = userId
+            //    };
+
+            //    await _category.AddAsync(category);
+            //    await _uow.SaveChangesAsync();
+            //}
 
             if (request.ParentId.HasValue) 
             {
@@ -67,12 +74,16 @@ namespace API.Service.TaskService
                 CreatedAt = DateTime.UtcNow,
                 Status = Enum.TaskStatus.Todo,
                 UserId = userId,
-                CategoryId = category.CategoryId,
+                CategoryId = category?.CategoryId,
                 ParentId = request.ParentId
             };
 
             if(request.TagNames != null && request.TagNames.Any())
             {
+
+                //var tagNames = request.TagNames
+                //    .Select(x => x.Trim().ToLower()).Distinct().ToList();
+
                 task.TaskTags = new List<TaskTag>();
 
                 foreach(var tagName in request.TagNames)
