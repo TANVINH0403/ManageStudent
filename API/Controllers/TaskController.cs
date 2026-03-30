@@ -20,6 +20,7 @@ namespace API.Controllers
         private readonly DeleteTaskHandle _deleteTask;
         private readonly GetTaskByIdHandle _getTaskById;
         private readonly UpdateStatusHanlde _updateStatus;
+        private readonly GetTaskHandle _getTaskHandle;
 
         public TaskController(ILogger<TaskController> logger, 
             GetAllTaskHandle getTaskService,
@@ -27,7 +28,8 @@ namespace API.Controllers
             UpdateTaskHandle updateTask, 
             DeleteTaskHandle deleteTask,
             GetTaskByIdHandle getTaskById,
-            UpdateStatusHanlde updateStatus
+            UpdateStatusHanlde updateStatus,
+            GetTaskHandle getTaskHandle
             )
         {
             _logger = logger;
@@ -37,10 +39,11 @@ namespace API.Controllers
             _deleteTask = deleteTask;
             _getTaskById = getTaskById;
             _updateStatus = updateStatus;
+            _getTaskHandle = getTaskHandle;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTasks()
+        public async Task<IActionResult> GetTask([FromQuery] GetTaskQuery query)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -49,7 +52,7 @@ namespace API.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            var result = await _getTaskService.TaskGetAllAsync(userId);
+            var result = await _getTaskHandle.TaskGetHandle(query,userId);
             return Ok(result);
         }
 

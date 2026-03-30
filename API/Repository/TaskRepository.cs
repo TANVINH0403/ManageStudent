@@ -3,6 +3,7 @@ using API.Dtos.Task;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using NPOI.OpenXmlFormats.Wordprocessing;
 using NPOI.Util;
 using System.Threading.Tasks;
@@ -44,6 +45,16 @@ namespace API.Repository
         public async Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId)
         {
             return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
+        }
+
+        public async Task<IQueryable<Entities.Task>> GetQueryAsync(int userId)
+        {
+            return _context.Tasks
+                .Include(x => x.Category)
+                .Include(x => x.TaskTags)
+                .ThenInclude(xx => xx.Tag)
+                .Where(t => t.UserId == userId)
+            .AsQueryable();
         }
 
         public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)

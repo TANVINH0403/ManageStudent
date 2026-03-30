@@ -13,5 +13,6 @@ namespace API.Interfaces
         Task<List<Entities.Task>> GetSubTasksAsync(int parentId);
         void Remove(Entities.Task task);
         void DeleteRange(List<Entities.Task> tasks);
+        Task<IQueryable<Entities.Task>> GetQueryAsync(int userId);
     }
 }

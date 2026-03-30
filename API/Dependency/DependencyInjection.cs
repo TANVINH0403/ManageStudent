@@ -1,4 +1,5 @@
-﻿using API.Interfaces;
+﻿using API.Dtos.Task;
+using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
@@ -39,7 +40,7 @@ namespace API.Dependency
             services.AddScoped<GetCategoryByIdHandle>();
             services.AddScoped<UpdateCategoryHandle>();
             services.AddScoped<DeleteCategoryHandle>();
-
+            services.AddScoped<GetTaskHandle>();
 
 
 
