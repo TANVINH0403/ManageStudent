@@ -1,0 +1,109 @@
+﻿using API.Dtos.Category;
+using API.Service.CategoryService;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Security.Claims;
+
+namespace API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class CategoryController : ControllerBase
+    {
+        private readonly CreateCategoryHandle _cateCreateHandle;
+        private readonly GetAllCategoryHandler _getAllCateHandle;
+        private readonly GetCategoryByIdHandle _getByIdCatedHandle;
+        private readonly UpdateCategoryHandle _updateCateHandle;
+        private readonly DeleteCategoryHandle _deleteCateHandle;
+
+        public CategoryController(CreateCategoryHandle cateHandle,
+            GetAllCategoryHandler getAllCate,
+            GetCategoryByIdHandle getByIdCateHandle,
+            UpdateCategoryHandle updateCateHandle,
+            DeleteCategoryHandle deleteCateHandle
+            )
+        {
+            _cateCreateHandle = cateHandle;
+            _getAllCateHandle = getAllCate;
+            _getByIdCatedHandle = getByIdCateHandle;
+            _updateCateHandle = updateCateHandle;
+            _deleteCateHandle = deleteCateHandle;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateCategory([FromBody] CategoryRequestdto request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+            var userId = int.Parse(userIdClaim);
+
+            var result = await _cateCreateHandle.CreateCategoryAsync(request, userId);
+            return Ok(result);
+
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllCategory()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+
+            var userId = int.Parse(userIdClaim);
+
+            var result = await _getAllCateHandle.CategoryGetAllHandle(userId);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{categoryId}")]
+        public async Task<IActionResult> GetByIdCategory(int categoryId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = int.Parse(userIdClaim);
+
+            var result = await _getByIdCatedHandle.CategoryGetByIdHandle(categoryId, userId);
+            return Ok(result);
+        }
+
+        [HttpPut("{categoryId}")]
+        public async Task<IActionResult> UpdateCategory(int categoryId, [FromBody]CategoryRequestdto request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+
+            var userId = int.Parse(userIdClaim);
+            await _updateCateHandle.CategopryUpdateHandle(categoryId, request, userId);
+            return NoContent();
+        }
+
+        [HttpDelete("{categoryId}")]
+        public async Task<IActionResult> DeleteCategory(int categoryId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = int.Parse(userIdClaim);
+
+            await _deleteCateHandle.CategoryDeleteAsync(categoryId, userId);
+            return NoContent();
+        }
+    }
+}

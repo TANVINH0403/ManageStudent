@@ -3,7 +3,7 @@ using API.Dtos.Task;
 using API.Entities;
 using API.Interfaces;
 using API.UnitOfWork;
-using API.Validator.Task;
+using API.Validator;
 
 namespace API.Service.TaskService
 {

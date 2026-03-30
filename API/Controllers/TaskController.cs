@@ -14,7 +14,7 @@ namespace API.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ILogger<TaskController> _logger;
-        private readonly GetTaskService _getTaskService;
+        private readonly GetAllTaskHandle _getTaskService;
         private readonly CreateTaskHandler _createTaskHandler;
         private readonly UpdateTaskHandle _updateTask;
         private readonly DeleteTaskHandle _deleteTask;
@@ -22,7 +22,7 @@ namespace API.Controllers
         private readonly UpdateStatusHanlde _updateStatus;
 
         public TaskController(ILogger<TaskController> logger, 
-            GetTaskService getTaskService,
+            GetAllTaskHandle getTaskService,
             CreateTaskHandler createTaskHandler, 
             UpdateTaskHandle updateTask, 
             DeleteTaskHandle deleteTask,
@@ -49,7 +49,7 @@ namespace API.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            var result = await _getTaskService.GetAllTaskAsync(userId);
+            var result = await _getTaskService.TaskGetAllAsync(userId);
             return Ok(result);
         }
 
@@ -83,7 +83,7 @@ namespace API.Controllers
 
         //    var userId = int.Parse(userIdClaim);
 
-        //    var result = await _taskService.GetAllTaskAsync(userId);
+        //    var result = await _taskService.TaskGetAllAsync(userId);
 
         //    return Ok(result);
         //}

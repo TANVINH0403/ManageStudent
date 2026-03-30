@@ -19,6 +19,18 @@ namespace API.Repository
             await _context.Categories.AddAsync(category);
         }
 
+        public void Delete(Category category)
+        {
+            _context.Categories.Remove(category);
+        }
+
+        public async Task<List<Category>> GetAllByUserIdAsync(int userId)
+        {
+            return await _context.Categories
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
+        }
+
         public async Task<Category?> GetByIdAsync(int categoryId, int userId)
         {
             return await _context.Categories.FirstOrDefaultAsync(c => c.CategoryId == categoryId && c.UserId == userId);
