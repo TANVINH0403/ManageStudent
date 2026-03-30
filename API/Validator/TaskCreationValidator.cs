@@ -1,12 +1,12 @@
 ﻿using API.Dtos.Task;
 
-namespace API.Validator.Task
+namespace API.Validator
 {
     public class TaskCreationValidator
     {
-        public List<String> Validate(TaskCreationRequestDto request)
+        public List<string> Validate(TaskCreationRequestDto request)
         {
-            var errors = new List<String>();
+            var errors = new List<string>();
 
             //TaskName
             if(string.IsNullOrWhiteSpace(request.TaskName))

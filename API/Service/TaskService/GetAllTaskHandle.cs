@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Service.TaskService
 {
-    public class GetTaskService 
+    public class GetAllTaskHandle 
     {
         private readonly ITaskRepository _repo;
-        public GetTaskService(ITaskRepository repo)
+        public GetAllTaskHandle(ITaskRepository repo)
         {
             _repo = repo;
         }
-        public async Task<List<TaskResponseDto>> GetAllTaskAsync(int userId)
+        public async Task<List<TaskResponseDto>> TaskGetAllAsync(int userId)
         {
             return await _repo.GetAllTasks()
                 .Where(t =>  t.UserId == userId && t.ParentId == null)

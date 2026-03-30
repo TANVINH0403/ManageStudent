@@ -1,9 +1,10 @@
 ﻿using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
+using API.Service.CategoryService;
 using API.Service.TaskService;
 using API.UnitOfWork;
-using API.Validator.Task;
+using API.Validator;
 using Microsoft.AspNetCore.Identity;
 
 namespace API.Dependency
@@ -12,8 +13,8 @@ namespace API.Dependency
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            
-            services.AddScoped<GetTaskService>();
+            //Task - Auth
+            services.AddScoped<GetAllTaskHandle>();
             services.AddScoped<GetTaskByIdHandle>();
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
@@ -28,8 +29,16 @@ namespace API.Dependency
             services.AddScoped<UpdateTaskHandle>();
             services.AddScoped<DeleteTaskHandle>();
             services.AddScoped<UpdateStatusHanlde>();
-
+            //services.AddScoped<CreateTaskHandler>();
             services.AddScoped<DeleteTaskHandle>();
+
+            //Category
+            services.AddScoped<CreateCategoryHandle>();
+            services.AddScoped<CreateCategoryValidator>();
+            services.AddScoped<GetAllCategoryHandler>();
+            services.AddScoped<GetCategoryByIdHandle>();
+            services.AddScoped<UpdateCategoryHandle>();
+            services.AddScoped<DeleteCategoryHandle>();
 
 
 
