@@ -44,7 +44,7 @@ namespace API.Service.CategoryService
             return new CategoryResponseDto
             {
                 CategoryId = category.CategoryId,
-                CategoryName = category.CategoryName,
+                CategoryName = category.CategoryName
             };
         }
     }

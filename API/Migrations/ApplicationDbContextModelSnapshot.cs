@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace ManagerStudent.Migrations
+namespace API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -22,35 +22,7 @@ namespace ManagerStudent.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("API.Entities.User", b =>
-                {
-                    b.Property<int>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("ManagerStudent.Entities.Category", b =>
+            modelBuilder.Entity("API.Entities.Category", b =>
                 {
                     b.Property<int>("CategoryId")
                         .ValueGeneratedOnAdd()
@@ -72,7 +44,7 @@ namespace ManagerStudent.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Tag", b =>
+            modelBuilder.Entity("API.Entities.Tag", b =>
                 {
                     b.Property<int>("TagId")
                         .ValueGeneratedOnAdd()
@@ -85,7 +57,7 @@ namespace ManagerStudent.Migrations
 
                     b.Property<string>("TagName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -94,10 +66,13 @@ namespace ManagerStudent.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("TagName", "UserId")
+                        .IsUnique();
+
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
+            modelBuilder.Entity("API.Entities.Task", b =>
                 {
                     b.Property<int>("TaskId")
                         .ValueGeneratedOnAdd()
@@ -134,6 +109,9 @@ namespace ManagerStudent.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
@@ -145,10 +123,10 @@ namespace ManagerStudent.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TasksItem");
+                    b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.TaskTag", b =>
+            modelBuilder.Entity("API.Entities.TaskTag", b =>
                 {
                     b.Property<int>("TaskId")
                         .HasColumnType("int");
@@ -161,6 +139,34 @@ namespace ManagerStudent.Migrations
                     b.HasIndex("TagId");
 
                     b.ToTable("TaskTags");
+                });
+
+            modelBuilder.Entity("API.Entities.User", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -361,7 +367,7 @@ namespace ManagerStudent.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Category", b =>
+            modelBuilder.Entity("API.Entities.Category", b =>
                 {
                     b.HasOne("API.Entities.User", "User")
                         .WithMany("Categories")
@@ -372,7 +378,7 @@ namespace ManagerStudent.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.Tag", b =>
+            modelBuilder.Entity("API.Entities.Tag", b =>
                 {
                     b.HasOne("API.Entities.User", "User")
                         .WithMany("Tags")
@@ -383,20 +389,20 @@ namespace ManagerStudent.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
+            modelBuilder.Entity("API.Entities.Task", b =>
                 {
-                    b.HasOne("ManagerStudent.Entities.Category", "Category")
-                        .WithMany("TasksItem")
+                    b.HasOne("API.Entities.Category", "Category")
+                        .WithMany("Tasks")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("ManagerStudent.Entities.TaskItem", "ParentTask")
+                    b.HasOne("API.Entities.Task", "ParentTask")
                         .WithMany("SubTasks")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("API.Entities.User", "User")
-                        .WithMany("TasksItem")
+                        .WithMany("Tasks")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -408,15 +414,15 @@ namespace ManagerStudent.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ManagerStudent.Entities.TaskTag", b =>
+            modelBuilder.Entity("API.Entities.TaskTag", b =>
                 {
-                    b.HasOne("ManagerStudent.Entities.Tag", "Tag")
+                    b.HasOne("API.Entities.Tag", "Tag")
                         .WithMany("TaskTags")
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ManagerStudent.Entities.TaskItem", "TaskItem")
+                    b.HasOne("API.Entities.Task", "Task")
                         .WithMany("TaskTags")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -424,7 +430,7 @@ namespace ManagerStudent.Migrations
 
                     b.Navigation("Tag");
 
-                    b.Navigation("TaskItem");
+                    b.Navigation("Task");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -478,30 +484,30 @@ namespace ManagerStudent.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("API.Entities.Category", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("API.Entities.Tag", b =>
+                {
+                    b.Navigation("TaskTags");
+                });
+
+            modelBuilder.Entity("API.Entities.Task", b =>
+                {
+                    b.Navigation("SubTasks");
+
+                    b.Navigation("TaskTags");
+                });
+
             modelBuilder.Entity("API.Entities.User", b =>
                 {
                     b.Navigation("Categories");
 
                     b.Navigation("Tags");
 
-                    b.Navigation("TasksItem");
-                });
-
-            modelBuilder.Entity("ManagerStudent.Entities.Category", b =>
-                {
-                    b.Navigation("TasksItem");
-                });
-
-            modelBuilder.Entity("ManagerStudent.Entities.Tag", b =>
-                {
-                    b.Navigation("TaskTags");
-                });
-
-            modelBuilder.Entity("ManagerStudent.Entities.TaskItem", b =>
-                {
-                    b.Navigation("SubTasks");
-
-                    b.Navigation("TaskTags");
+                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

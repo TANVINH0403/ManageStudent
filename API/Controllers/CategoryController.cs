@@ -18,12 +18,16 @@ namespace API.Controllers
         private readonly GetCategoryByIdHandle _getByIdCatedHandle;
         private readonly UpdateCategoryHandle _updateCateHandle;
         private readonly DeleteCategoryHandle _deleteCateHandle;
+        private readonly CompletedCategoryHandle _completedCateHandle;
+        private readonly UpdateVisibility _updateVisi;
 
         public CategoryController(CreateCategoryHandle cateHandle,
             GetAllCategoryHandler getAllCate,
             GetCategoryByIdHandle getByIdCateHandle,
             UpdateCategoryHandle updateCateHandle,
-            DeleteCategoryHandle deleteCateHandle
+            DeleteCategoryHandle deleteCateHandle,
+            CompletedCategoryHandle completedCategory,
+            UpdateVisibility updateVisi
             )
         {
             _cateCreateHandle = cateHandle;
@@ -31,6 +35,8 @@ namespace API.Controllers
             _getByIdCatedHandle = getByIdCateHandle;
             _updateCateHandle = updateCateHandle;
             _deleteCateHandle = deleteCateHandle;
+            _completedCateHandle = completedCategory;
+            _updateVisi = updateVisi;
         }
 
         [HttpPost]
@@ -105,5 +111,41 @@ namespace API.Controllers
             await _deleteCateHandle.CategoryDeleteAsync(categoryId, userId);
             return NoContent();
         }
+
+
+        [HttpPatch("{categoryId}/complete")]
+        public async Task<IActionResult> CompletedTask(int categoryId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = int.Parse(userIdClaim);
+
+            var result = await _completedCateHandle.GetTasksByCategoryIdAsync(categoryId, userId);
+
+            return Ok(new
+            {
+                message = "Sprint completed successfully",
+                updatedTasks = result
+            });
+        }
+
+
+        public async Task<IActionResult> UpdateVisibiity(int categoryId, [FromBody] UpdateVisibilityRequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = int.Parse(userIdClaim);
+
+            await _updateVisi.Handle(categoryId, userId, request.visibility);
+
+            return NoContent();
+        }
+
     }
 }

@@ -19,7 +19,7 @@ namespace API.Controllers
         private readonly UpdateTaskHandle _updateTask;
         private readonly DeleteTaskHandle _deleteTask;
         private readonly GetTaskByIdHandle _getTaskById;
-        private readonly UpdateStatusHanlde _updateStatus;
+        private readonly UpdateStatusHandle _updateStatus;
         private readonly GetTaskHandle _getTaskHandle;
 
         public TaskController(ILogger<TaskController> logger, 
@@ -28,7 +28,7 @@ namespace API.Controllers
             UpdateTaskHandle updateTask, 
             DeleteTaskHandle deleteTask,
             GetTaskByIdHandle getTaskById,
-            UpdateStatusHanlde updateStatus,
+            UpdateStatusHandle updateStatus,
             GetTaskHandle getTaskHandle
             )
         {
@@ -194,6 +194,5 @@ namespace API.Controllers
                 Message = "Update Status succesfull"
             });
         }
-
     }
 }

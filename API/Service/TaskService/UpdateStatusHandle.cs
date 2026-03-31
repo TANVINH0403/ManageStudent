@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Service.TaskService
 {
-    public class UpdateStatusHanlde
+    public class UpdateStatusHandle
     {
         private readonly ITaskRepository _taskRepo;
         private readonly IUnitOfWork _uow;
 
-        public UpdateStatusHanlde(ITaskRepository taskRepo, IUnitOfWork uow)
+        public UpdateStatusHandle(ITaskRepository taskRepo, IUnitOfWork uow)
         {
             _taskRepo = taskRepo;
             _uow = uow;
@@ -32,7 +32,7 @@ namespace API.Service.TaskService
             task.Status = status;
             if(status == Enum.TaskStatus.Completed)
             {
-                task.CompletedAt = DateTime.Now;
+                task.CompletedAt = DateTime.UtcNow;
             }
             else
             {

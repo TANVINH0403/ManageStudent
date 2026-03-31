@@ -9,6 +9,8 @@ namespace API.Interfaces
         Task<Category?> GetByIdAsync(int categoryId, int userId);
         Task<List<Category>> GetAllByUserIdAsync(int userId);
         void Delete(Category category);
-
+        void UpdateRange(List<Entities.Task> tasks);
+        Task<List<Entities.Task>> GetTaskByCategoryIdAsync(int categoryId, int userId);
+        Task<List<Category>> GetPublicCategoriesAsync();
     }
 }

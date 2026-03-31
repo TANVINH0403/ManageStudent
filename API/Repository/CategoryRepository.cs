@@ -41,5 +41,25 @@ namespace API.Repository
             return await _context.Categories
                 .FirstOrDefaultAsync(c => c.CategoryName == name && c.UserId == userId);
         }
+
+        public async Task<List<Category>> GetPublicCategoriesAsync()
+        {
+            return await _context.Categories
+                .Where(w => w.Visibility == Enum.Visibility.Public)
+                .ToListAsync();
+        }
+
+        public async Task<List<Entities.Task>> GetTaskByCategoryIdAsync(int categoryId, int userId)
+        {
+            return await _context.Tasks
+                .Where(t => t.CategoryId == categoryId && t.UserId == userId)
+                .ToListAsync();
+        }
+
+        public void UpdateRange(List<Entities.Task> tasks)
+        {
+            _context.Tasks.UpdateRange(tasks);
+        }
+
     }
 }

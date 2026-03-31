@@ -29,7 +29,7 @@ namespace API.Service.TaskService
             if (request.Priority != null)
             {
                 query = query.Where(x => x.Priority == request.Priority);
-            }
+            } 
 
             if(request.CategoryId != null)
             {
@@ -62,6 +62,7 @@ namespace API.Service.TaskService
                 DueDate = x.DueDate,
                 Status = x.Status,
                 Priority = x.Priority,
+                UpdatedAt = x.UpdatedAt,
                 CategoryId = x.CategoryId,
                 ParentId = x.ParentId,
                 Tags = x.TaskTags.Select(tt => tt.Tag.TagName).ToList(),
