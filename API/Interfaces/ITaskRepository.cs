@@ -14,5 +14,10 @@ namespace API.Interfaces
         void Remove(Entities.Task task);
         void DeleteRange(List<Entities.Task> tasks);
         Task<IQueryable<Entities.Task>> GetQueryAsync(int userId);
+        //Task<DashboardDto> GetDashboardAsync(int userId);
+        Task<List<Entities.Task>> GetAllByUserId(int userId);
+
+        IQueryable<Entities.Task> GetTasksByUser(int userId);
+
     }
 }
