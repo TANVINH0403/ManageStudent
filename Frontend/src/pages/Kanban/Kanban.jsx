@@ -32,7 +32,7 @@ const Kanban = () => {
       <div className="kanban-board">
         {columns.map(col => (
           <div key={col.id} className="kanban-column">
-            <div className="column-header" style={{ borderTopColor: col.color }}>
+       <div className={`column-header ${col.id.toLowerCase().replace(' ', '-')}`}>
               <h3>{col.title}</h3>
               <span className="task-count">{getTasksByStatus(col.id).length}</span>
             </div>
