@@ -1,0 +1,242 @@
+/* --- PHONG CÁCH TỐI GIẢN (ULTRA-MINIMALIST) --- */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px; /* Tăng khoảng cách để tạo độ "thở" */
+  height: 100%;
+  color: #111827; /* Màu chữ chính gần như đen */
+}
+
+/* HEADER */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f3f4f6; /* Đường line mỏng phân cách header */
+}
+
+.dashboard-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em; /* Ép chữ lại một chút cho sang */
+  margin-bottom: 8px;
+}
+
+.dashboard-header p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.btn-reset {
+  font-size: 0.85rem;
+  padding: 6px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 6px;
+  color: #374151;
+  transition: all 0.2s;
+}
+.btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
+
+/* --- STAT CARDS (THIẾT KẾ PHẲNG, VIỀN MỎNG) --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.stat-card {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb; /* Viền xám rất nhạt */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Thanh màu mỏng ở mép trên của card để nhận diện trạng thái */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.stat-card.blue::before { background: #3b82f6; }
+.stat-card.orange::before { background: #f59e0b; }
+.stat-card.green::before { background: #10b981; }
+.stat-card.red::before { background: #ef4444; }
+
+/* Trạng thái Hover & Active: Không nổi khối to đùng nữa, chỉ đậm viền lên */
+.stat-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card.active {
+  border-color: #111827; /* Nhấn bằng viền đen mờ khi active */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Sắp xếp lại nội dung card: Icon nhỏ, chữ to */
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-header p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-icon {
+  color: #9ca3af; /* Icon xám trung tính */
+}
+
+.stat-info h3 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+/* --- KHU VỰC DƯỚI (BIỂU ĐỒ & DANH SÁCH) --- */
+.dashboard-lower-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Biểu đồ - Sạch sẽ hơn */
+.chart-wrapper {
+  flex: 1;
+  padding: 24px 24px 8px 0;
+  min-height: 280px;
+}
+
+/* --- DANH SÁCH TASK MINI --- */
+.upcoming-tasks {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-mini-list {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Thẻ task không còn nền xám nguyên khối, chỉ có đường kẻ phân chia (divider) */
+.task-mini-item {
+  display: flex;
+  padding: 16px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+}
+
+.task-mini-item:last-child { border-bottom: none; }
+.task-mini-item:hover { background: #f9fafb; border-radius: 8px; }
+
+/* Nút checkbox (Circle) thay cho cục vuông */
+.check-wrapper {
+  margin-right: 12px;
+  margin-top: 2px;
+  color: #d1d5db;
+}
+.check-wrapper:hover { color: #10b981; }
+
+.task-mini-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-mini-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.task-mini-header h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.task-mini-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.meta-date { display: flex; align-items: center; gap: 4px; }
+
+/* Status: Dùng dấu chấm (dot) thay vì nguyên cái pill to */
+.status-dot-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-dot.Pending { background: #f59e0b; }
+.status-dot.InProgress { background: #3b82f6; }
+.status-dot.Completed { background: #10b981; }
+
+.status-text.Pending { color: #f59e0b; }
+.status-text.InProgress { color: #3b82f6; }
+.status-text.Completed { color: #10b981; }
+
+.empty-state-mini {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 12px; color: #9ca3af; font-size: 0.9rem; text-align: center;
+}
