@@ -27,6 +27,8 @@ namespace API.Service.TaskService
                 return false;
             }
 
+            task.UpdatedAt = DateTime.UtcNow;
+
             if (!string.IsNullOrEmpty(request.TaskName))
             {
                 task.TaskName = request.TaskName;
@@ -39,7 +41,10 @@ namespace API.Service.TaskService
 
             if (request.DueDate.HasValue)
             {
-                task.DueDate = request.DueDate.Value;
+                task.DueDate = request.DueDate?
+                    .Date
+                    .AddDays(1)
+                    .AddTicks(-1);
             }
 
             if (request.Priority.HasValue && !System.Enum.IsDefined(typeof(API.Enum.TaskPriority), request.Priority.Value))
@@ -63,6 +68,7 @@ namespace API.Service.TaskService
                 }
                 task.CategoryId = request.CategoryId.Value;
             }
+
 
             if (request.ParentId.HasValue)
             {
@@ -95,7 +101,7 @@ namespace API.Service.TaskService
                     task.CompletedAt = null;
                 }
             }
-           
+
             await _uow.SaveChangesAsync();
             return true;
         }

@@ -3,6 +3,7 @@ using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
+using API.Service.Dashboard;
 using API.Service.TaskService;
 using API.UnitOfWork;
 using API.Validator;
@@ -29,7 +30,7 @@ namespace API.Dependency
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
             services.AddScoped<UpdateTaskHandle>();
             services.AddScoped<DeleteTaskHandle>();
-            services.AddScoped<UpdateStatusHanlde>();
+            services.AddScoped<UpdateStatusHandle>();
             //services.AddScoped<CreateTaskHandler>();
             services.AddScoped<DeleteTaskHandle>();
 
@@ -41,6 +42,11 @@ namespace API.Dependency
             services.AddScoped<UpdateCategoryHandle>();
             services.AddScoped<DeleteCategoryHandle>();
             services.AddScoped<GetTaskHandle>();
+            services.AddScoped<CompletedCategoryHandle>();
+
+            //Dashboard
+            services.AddScoped<GetDashboardHandle>();
+            services.AddScoped<BoardHandle>();
 
 
 

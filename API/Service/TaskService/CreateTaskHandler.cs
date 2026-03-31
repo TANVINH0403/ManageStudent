@@ -4,6 +4,7 @@ using API.Entities;
 using API.Interfaces;
 using API.UnitOfWork;
 using API.Validator;
+using MathNet.Numerics.Optimization;
 
 namespace API.Service.TaskService
 {
@@ -31,7 +32,6 @@ namespace API.Service.TaskService
             {
                 throw new Exception(string.Join("; ", errors));
             };
-
             Category? category = null;
             if (request.CategoryId.HasValue)
             {
@@ -54,6 +54,7 @@ namespace API.Service.TaskService
             //    await _uow.SaveChangesAsync();
             //}
 
+
             if (request.ParentId.HasValue) 
             {
                 if (request.ParentId.Value == 0)
@@ -61,15 +62,24 @@ namespace API.Service.TaskService
                 var parent = await _task.GetByIdAsync(request.ParentId.Value, userId);
                 if(parent == null)
                 {
-                    throw new Exception("Parent not found or User not found");
+                    throw new Exception("Parent not found");
                 }
+            }
+
+            DateTime? dueDate = null;
+            if (request.DueDate.HasValue)
+            {
+                dueDate = request.DueDate.Value
+                    .Date
+                    .AddDays(1)
+                    .AddTicks(-1);
             }
 
             var task = new Entities.Task
             {
                 TaskName = request.TaskName.Trim(),
                 Description = request.Description,
-                DueDate = request.DueDate,
+                DueDate = dueDate,
                 Priority = request.Priority,
                 CreatedAt = DateTime.UtcNow,
                 Status = Enum.TaskStatus.Todo,
@@ -80,21 +90,22 @@ namespace API.Service.TaskService
 
             if(request.TagNames != null && request.TagNames.Any())
             {
-
-                //var tagNames = request.TagNames
-                //    .Select(x => x.Trim().ToLower()).Distinct().ToList();
+                var normalizedTags = request.TagNames
+           .Where(x => !string.IsNullOrWhiteSpace(x))
+           .Select(x => x.Trim().ToLower())
+           .Distinct()
+           .ToList();
 
                 task.TaskTags = new List<TaskTag>();
 
-                foreach(var tagName in request.TagNames)
+                foreach(var tagName in normalizedTags)
                 {
-                    var nomalized = tagName.Trim().ToLower();
-                    var tag = await _tag.GetTagByNameAsync(nomalized, userId);
+                    var tag = await _tag.GetTagByNameAsync(tagName, userId);
                     if(tag == null)
                     {
                         tag = new Tag
                         {
-                            TagName = nomalized,
+                            TagName = tagName,
                             CreatedAt = DateTime.UtcNow,
                             UserId = userId
                         };

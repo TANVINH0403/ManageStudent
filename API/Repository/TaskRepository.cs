@@ -27,6 +27,13 @@ namespace API.Repository
             _context.Tasks.RemoveRange(tasks);
         }
 
+        public async Task<List<Entities.Task>> GetAllByUserId(int userId)
+        {
+            return await _context.Tasks
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
+        }
+
         public IQueryable<Entities.Task> GetAllTasks()
         {
             return _context.Tasks;
@@ -62,6 +69,13 @@ namespace API.Repository
             return await _context.Tasks
                 .Where(t => t.ParentId == parentId)
                 .ToListAsync();
+        }
+
+        public IQueryable<Entities.Task> GetTasksByUser(int userId)
+        {
+            return _context.Tasks
+                .Where(x => x.UserId ==  userId)
+                .AsQueryable();
         }
 
         public void Remove(Entities.Task task)
