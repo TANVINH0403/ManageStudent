@@ -1,0 +1,155 @@
+.kanban-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Chiếm full chiều cao phần content */
+  gap: 24px;
+}
+
+.kanban-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanban-header h1 {
+  font-size: 1.8rem;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.kanban-header p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* BẢNG KANBAN */
+.kanban-board {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  overflow-x: auto; /* Cho phép cuộn ngang nếu nhiều cột */
+  padding-bottom: 16px;
+}
+
+/* CỘT KANBAN */
+.kanban-column {
+  flex: 1;
+  min-width: 320px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.column-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  border-top: 4px solid transparent; /* Sẽ được set màu inline bên JSX */
+  border-radius: 16px 16px 0 0;
+  background: #ffffff;
+}
+
+.column-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.task-count {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.column-content {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto; /* Cột nào dài quá thì cuộn dọc độc lập */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* THẺ CÔNG VIỆC (CARD) */
+.kanban-card {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  cursor: grab;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kanban-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(51, 120, 255, 0.15);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.priority-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.priority-badge.High { background: #fee2e2; color: #ef4444; }
+.priority-badge.Medium { background: #fef3c7; color: #d97706; }
+.priority-badge.Low { background: #dcfce3; color: #10b981; }
+
+.btn-icon-small {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.btn-icon-small:hover { color: #334155; }
+
+.card-title {
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.card-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Chỉ hiển thị tối đa 2 dòng */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
