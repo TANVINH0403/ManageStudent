@@ -9,6 +9,7 @@ import Kanban from './pages/Kanban/Kanban';
 import Categories from './pages/Categories/Categories';
 import Calendar from './pages/Calendar/Calendar';
 import Profile from './pages/Profile/Profile';
+import Settings from './pages/Settings/Settings';
 function App() {
   return (
     <Router>
@@ -22,6 +23,7 @@ function App() {
           <Route path="categories" element={<Categories />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
           {/* Các route khác sẽ thêm sau */}
         </Route>
       </Routes>
