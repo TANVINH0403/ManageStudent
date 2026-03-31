@@ -8,6 +8,7 @@ import Login from './pages/Login/Login';
 import Kanban from './pages/Kanban/Kanban';
 import Categories from './pages/Categories/Categories';
 import Calendar from './pages/Calendar/Calendar';
+import Profile from './pages/Profile/Profile';
 function App() {
   return (
     <Router>
@@ -20,6 +21,7 @@ function App() {
           <Route path="kanban" element={<Kanban />} />
           <Route path="categories" element={<Categories />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="profile" element={<Profile />} />
           {/* Các route khác sẽ thêm sau */}
         </Route>
       </Routes>
