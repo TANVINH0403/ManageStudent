@@ -4,6 +4,7 @@ using API.Entities;
 using API.Interfaces;
 using API.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 
 namespace API.Service.AuthService
@@ -91,5 +92,8 @@ namespace API.Service.AuthService
                 Message = "User registered successfully.",
             };
         }
+
+
+
     }
 }

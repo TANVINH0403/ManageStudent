@@ -8,6 +8,7 @@ using API.Service.TaskService;
 using API.UnitOfWork;
 using API.Validator;
 using Microsoft.AspNetCore.Identity;
+using System.Text.Json;
 
 namespace API.Dependency
 {
@@ -47,6 +48,7 @@ namespace API.Dependency
             //Dashboard
             services.AddScoped<GetDashboardHandle>();
             services.AddScoped<BoardHandle>();
+            services.AddScoped<UpdateVisibility>();
 
 
 
@@ -56,7 +58,7 @@ namespace API.Dependency
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy
-                    .WithOrigins("http://127.0.0.1:5500")
+                    .WithOrigins("http://localhost:5174")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
@@ -68,6 +70,11 @@ namespace API.Dependency
                 {
                     options.JsonSerializerOptions.Converters
                     .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
+
+            services.AddControllers()
+                .AddJsonOptions(options => {
+                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
 
             return services;

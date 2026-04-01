@@ -22,6 +22,8 @@ namespace API
 
             builder.Services.AddApplicationServices();
             builder.Services.AddJwtAuthDenpendency(builder.Configuration);
+
+
             var app = builder.Build();
             // Configure the HTTP request pipeline.
 
@@ -30,8 +32,8 @@ namespace API
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.MapControllers();
             app.UseHttpsRedirection();
+            app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
