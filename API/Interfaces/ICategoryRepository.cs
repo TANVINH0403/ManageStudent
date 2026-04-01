@@ -11,6 +11,6 @@ namespace API.Interfaces
         void Delete(Category category);
         void UpdateRange(List<Entities.Task> tasks);
         Task<List<Entities.Task>> GetTaskByCategoryIdAsync(int categoryId, int userId);
-
+        Task<List<Category>> GetPublicCategoriesAsync();
     }
 }
