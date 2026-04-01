@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260331151006_init")]
-    partial class init
+    [Migration("20260402082225_it")]
+    partial class it
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,6 +38,9 @@ namespace API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Visibility")
                         .HasColumnType("int");
 
                     b.HasKey("CategoryId");
@@ -110,7 +113,7 @@ namespace API.Migrations
 
                     b.Property<string>("TaskName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -123,6 +126,8 @@ namespace API.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("TaskName");
 
                     b.HasIndex("UserId");
 
@@ -163,7 +168,7 @@ namespace API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -272,7 +277,7 @@ namespace API.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 

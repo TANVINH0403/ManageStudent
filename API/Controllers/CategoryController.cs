@@ -19,13 +19,15 @@ namespace API.Controllers
         private readonly UpdateCategoryHandle _updateCateHandle;
         private readonly DeleteCategoryHandle _deleteCateHandle;
         private readonly CompletedCategoryHandle _completedCateHandle;
+        private readonly UpdateVisibility _updateVisi;
 
         public CategoryController(CreateCategoryHandle cateHandle,
             GetAllCategoryHandler getAllCate,
             GetCategoryByIdHandle getByIdCateHandle,
             UpdateCategoryHandle updateCateHandle,
             DeleteCategoryHandle deleteCateHandle,
-            CompletedCategoryHandle completedCategory
+            CompletedCategoryHandle completedCategory,
+            UpdateVisibility updateVisi
             )
         {
             _cateCreateHandle = cateHandle;
@@ -34,6 +36,7 @@ namespace API.Controllers
             _updateCateHandle = updateCateHandle;
             _deleteCateHandle = deleteCateHandle;
             _completedCateHandle = completedCategory;
+            _updateVisi = updateVisi;
         }
 
         [HttpPost]
@@ -120,13 +123,29 @@ namespace API.Controllers
 
             var userId = int.Parse(userIdClaim);
 
-            var result = await _completedCateHandle.GetTasksByCategoryIdAsync(categoryId, userId);
+            var result = await _completedCateHandle.CategoryCompleteHandle(categoryId, userId);
 
             return Ok(new
             {
                 message = "Sprint completed successfully",
                 updatedTasks = result
             });
+        }
+
+
+        [HttpPatch("{categoryId}/visibility")]
+        public async Task<IActionResult> UpdateVisibiity(int categoryId, [FromBody] UpdateVisibilityRequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = int.Parse(userIdClaim);
+
+            await _updateVisi.Handle(categoryId, userId, request.visibility);
+
+            return NoContent();
         }
     }
 }

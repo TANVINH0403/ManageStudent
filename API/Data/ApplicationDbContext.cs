@@ -28,11 +28,14 @@ namespace API.Data
             base.OnModelCreating(builder);
 
             #region
-            builder.Entity<Task>()
-                .HasOne(u => u.User)
+            builder.Entity<Task>(e =>
+            {
+                e.HasIndex(u => u.TaskName);
+                e.HasOne(u => u.User)
                 .WithMany(t => t.Tasks)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            });
 
             builder.Entity<Task>()
                 .HasOne(U => U.ParentTask)

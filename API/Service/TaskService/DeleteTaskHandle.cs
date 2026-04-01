@@ -23,7 +23,7 @@ namespace API.Service.TaskService
 
             if (task.ParentId == null)
             {
-                var allSubTasks = await GetAllSubTaskAsync(taskId);
+                var allSubTasks = await GetAllSubTaskAsync(taskId, userId);
 
                 if (allSubTasks.Any())
                 {
@@ -44,14 +44,14 @@ namespace API.Service.TaskService
             await _uow.SaveChangesAsync();
         }
 
-        private async Task<List<Entities.Task>> GetAllSubTaskAsync(int parentId)
+        private async Task<List<Entities.Task>> GetAllSubTaskAsync(int parentId, int userId)
         {
             var result = new List<Entities.Task>();
-            var children = await _taskRepo.GetSubTasksAsync(parentId);
+            var children = await _taskRepo.GetSubTasksAsync(parentId, userId);
             foreach (var child in children)
             {
                 result.Add(child);
-                var subChildren = await GetAllSubTaskAsync(child.TaskId);
+                var subChildren = await GetAllSubTaskAsync(child.TaskId, userId);
                 result.AddRange(subChildren);
             }
             return result;

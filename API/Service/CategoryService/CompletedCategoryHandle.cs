@@ -14,7 +14,7 @@ namespace API.Service.CategoryService
             _uow = uow;
         }
 
-        public async Task<int> GetTasksByCategoryIdAsync(int categoryId, int userId)
+        public async Task<int> CategoryCompleteHandle(int categoryId, int userId)
         {
             var tasks = await _cateRepo.GetTaskByCategoryIdAsync(categoryId, userId);
             if(tasks == null || !tasks.Any())

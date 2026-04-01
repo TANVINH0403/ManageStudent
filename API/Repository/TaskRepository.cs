@@ -1,6 +1,7 @@
 ﻿using API.Data;
 using API.Dtos.Task;
 using API.Entities;
+using API.Enum;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
@@ -30,7 +31,11 @@ namespace API.Repository
         public async Task<List<Entities.Task>> GetAllByUserId(int userId)
         {
             return await _context.Tasks
-                .Where(x => x.UserId == userId)
+                .Include(t => t.Category)
+                .Where(t =>
+                    t.UserId == userId ||
+                    (t.Category != null && t.Category.Visibility == Visibility.Public)
+                 )
                 .ToListAsync();
         }
 
@@ -46,12 +51,19 @@ namespace API.Repository
                 .Include(x => x.TaskTags)
                     .ThenInclude(xx => xx.Tag)
                 .Include(t => t.Category)
-                .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
+                .FirstOrDefaultAsync(t =>
+                t.TaskId == taskId && (t.UserId == userId ||
+                (t.Category != null && t.Category.Visibility == Visibility.Public))
+                );
         }
 
         public async Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId)
         {
-            return await _context.Tasks.FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
+            return await _context.Tasks
+                .Include(t => t.Category)
+                .FirstOrDefaultAsync(t => t.TaskId == parentId && (
+                t.UserId == userId ||
+                (t.Category != null && t.Category.Visibility == Visibility.Public)));
         }
 
         public async Task<IQueryable<Entities.Task>> GetQueryAsync(int userId)
@@ -60,22 +72,30 @@ namespace API.Repository
                 .Include(x => x.Category)
                 .Include(x => x.TaskTags)
                 .ThenInclude(xx => xx.Tag)
-                .Where(t => t.UserId == userId)
-            .AsQueryable();
+                .Where(t => t.UserId == userId ||
+                (t.Category != null && t.Category.Visibility == Visibility.Public
+                )).AsQueryable();
         }
 
-        public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId)
+        public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId, int userId)
         {
             return await _context.Tasks
-                .Where(t => t.ParentId == parentId)
+                .Include(t => t.Category)
+                .Where(t =>
+                    t.ParentId == parentId &&
+                    (
+                        t.UserId == userId ||
+                        (t.Category != null && t.Category.Visibility == Visibility.Public)
+                    )
+                )
                 .ToListAsync();
         }
 
         public IQueryable<Entities.Task> GetTasksByUser(int userId)
         {
             return _context.Tasks
-                .Where(x => x.UserId ==  userId)
-                .AsQueryable();
+                .Include(x => x.Category)
+                .Where(x => x.UserId == userId || (x.Category != null && x.Category.Visibility == Visibility.Public));
         }
 
         public void Remove(Entities.Task task)
@@ -83,9 +103,9 @@ namespace API.Repository
             _context.Tasks.Remove(task);
         }
 
-        public  System.Threading.Tasks.Task SaveChangesAsync()
+        public System.Threading.Tasks.Task SaveChangesAsync()
         {
-            return  _context.SaveChangesAsync();
+            return _context.SaveChangesAsync();
         }
     }
 }
