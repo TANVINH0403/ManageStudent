@@ -67,6 +67,11 @@ namespace API.Data
                 .WithMany(t => t.Tasks)
                 .HasForeignKey(t => t.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<User>(u =>
+            {
+                u.HasIndex(t => t.UserName);
+            });
             #endregion
         }
     }
