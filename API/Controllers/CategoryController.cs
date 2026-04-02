@@ -133,6 +133,7 @@ namespace API.Controllers
         }
 
 
+        [HttpPatch("{categoryId}/Visibility")]
         public async Task<IActionResult> UpdateVisibiity(int categoryId, [FromBody] UpdateVisibilityRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -146,6 +147,5 @@ namespace API.Controllers
 
             return NoContent();
         }
-
     }
 }

@@ -27,7 +27,7 @@ namespace API.Repository
         public async Task<List<Category>> GetAllByUserIdAsync(int userId)
         {
             return await _context.Categories
-                .Where(x => x.UserId == userId)
+                .Where(x => x.Visibility == Enum.Visibility.Public ||  x.UserId == userId)
                 .ToListAsync();
         }
 

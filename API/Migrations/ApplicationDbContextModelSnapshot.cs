@@ -37,6 +37,9 @@ namespace API.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Visibility")
+                        .HasColumnType("int");
+
                     b.HasKey("CategoryId");
 
                     b.HasIndex("UserId");
@@ -107,7 +110,7 @@ namespace API.Migrations
 
                     b.Property<string>("TaskName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -120,6 +123,8 @@ namespace API.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("TaskName");
 
                     b.HasIndex("UserId");
 
