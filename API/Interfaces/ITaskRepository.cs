@@ -10,7 +10,7 @@ namespace API.Interfaces
         Task<Entities.Task?> GetByIdAsync(int taskId, int userId);
         System.Threading.Tasks.Task AddAsync(Tasks task);
         Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId);
-        Task<List<Entities.Task>> GetSubTasksAsync(int parentId);
+        Task<List<Entities.Task>> GetSubTasksAsync(int parentId, int userId);
         void Remove(Entities.Task task);
         void DeleteRange(List<Entities.Task> tasks);
         Task<IQueryable<Entities.Task>> GetQueryAsync(int userId);

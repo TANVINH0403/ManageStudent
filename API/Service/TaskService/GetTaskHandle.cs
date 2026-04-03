@@ -16,9 +16,9 @@ namespace API.Service.TaskService
             _uow = uow;
         }
 
-        public async Task<object> TaskGetHandle(GetTaskQuery request, int userId)
+        public async  Task<object> TaskGetHandle(GetTaskQuery request, int userId)
         {
-            var  query = await _taskRepo.GetQueryAsync(userId);
+            var  query = await  _taskRepo.GetQueryAsync(userId);
             
             //Filter
             if(request.Status != null)

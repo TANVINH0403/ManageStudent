@@ -123,7 +123,7 @@ namespace API.Controllers
 
             var userId = int.Parse(userIdClaim);
 
-            var result = await _completedCateHandle.GetTasksByCategoryIdAsync(categoryId, userId);
+            var result = await _completedCateHandle.CategoryCompleteHandle(categoryId, userId);
 
             return Ok(new
             {
@@ -133,7 +133,7 @@ namespace API.Controllers
         }
 
 
-        [HttpPatch("{categoryId}/Visibility")]
+        [HttpPatch("{categoryId}/visibility")]
         public async Task<IActionResult> UpdateVisibiity(int categoryId, [FromBody] UpdateVisibilityRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
