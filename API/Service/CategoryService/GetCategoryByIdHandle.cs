@@ -27,6 +27,7 @@ namespace API.Service.CategoryService
             {
                 CategoryId = category.CategoryId,
                 CategoryName = category.CategoryName,
+                Visibility = category.Visibility.ToString()
             };
         }
     }

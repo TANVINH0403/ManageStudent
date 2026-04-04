@@ -47,7 +47,7 @@ namespace API.Service.TaskService
         private async Task<List<Entities.Task>> GetAllSubTaskAsync(int parentId, int userId)
         {
             var result = new List<Entities.Task>();
-            var children = await _taskRepo.GetSubTasksAsync(parentId, userId);
+            var children = await _taskRepo.DeleteSubTasksAsync(parentId, userId);
             foreach (var child in children)
             {
                 result.Add(child);

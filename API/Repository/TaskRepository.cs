@@ -77,7 +77,7 @@ namespace API.Repository
                 )).AsQueryable();
         }
 
-        public async Task<List<Entities.Task>> GetSubTasksAsync(int parentId, int userId)
+        public async Task<List<Entities.Task>> DeleteSubTasksAsync(int parentId, int userId)
         {
             return await _context.Tasks
                 .Include(t => t.Category)
@@ -87,6 +87,18 @@ namespace API.Repository
                         t.UserId == userId ||
                         (t.Category != null && t.Category.Visibility == Visibility.Public)
                     )
+                )
+                .ToListAsync();
+        }
+
+        public async Task<List<Entities.Task>> GetRootTasksAsync(int categoryId, int userId)
+        {
+            return await _context.Tasks
+                .Where(t => t.CategoryId == categoryId &&
+                    t.ParentId == null &&
+                   (t.UserId == userId ||
+                     (t.Category != null && t.Category.Visibility == Visibility.Public)
+                  )
                 )
                 .ToListAsync();
         }
@@ -103,9 +115,28 @@ namespace API.Repository
             _context.Tasks.Remove(task);
         }
 
+        public async Task<HashSet<int>> GetTaskIdsHasChildrenAsync(List<int> taskIds)
+        {
+            var list = await _context.Tasks
+                .Where(t => t.ParentId != null && taskIds.Contains(t.ParentId.Value))
+                .Select(t => t.ParentId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            return list.ToHashSet();
+        }
+
         public System.Threading.Tasks.Task SaveChangesAsync()
         {
             return _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId)
+        {
+            return await _context.Tasks
+                .Where(t => t.ParentId == parentId &&
+                (t.UserId == userId || (t.Category != null && t.Category.Visibility == Visibility.Public)))
+                .ToListAsync();
         }
     }
 }

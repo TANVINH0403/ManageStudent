@@ -3,11 +3,13 @@ using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
-using API.Service.Dashboard;
+using API.Service.DashboardService;
+using API.Service.TagService;
 using API.Service.TaskService;
 using API.UnitOfWork;
 using API.Validator;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Formatters.Xml;
 using System.Text.Json;
 
 namespace API.Dependency
@@ -25,8 +27,8 @@ namespace API.Dependency
             services.AddScoped<IUnitOfWork, API.UnitOfWork.UnitOfWork>();
             services.AddScoped<CreateTaskHandler>();
             services.AddScoped<TaskCreationValidator>();
-            services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<AuthService>();
+            services.AddScoped<IAuthRepository, AuthRepository>();
             services.AddScoped<TokenService>();
             services.AddScoped<IPasswordHasher<API.Entities.User>, PasswordHasher<API.Entities.User>>();
             services.AddScoped<UpdateTaskHandle>();
@@ -34,6 +36,8 @@ namespace API.Dependency
             services.AddScoped<UpdateStatusHandle>();
             //services.AddScoped<CreateTaskHandler>();
             services.AddScoped<DeleteTaskHandle>();
+            services.AddScoped<GetTasksByCategoryHandle>();
+            services.AddScoped<GetSubTasksHandle>();
 
             //Category
             services.AddScoped<CreateCategoryHandle>();
@@ -50,7 +54,12 @@ namespace API.Dependency
             services.AddScoped<BoardHandle>();
             services.AddScoped<UpdateVisibility>();
 
-
+            //Tag
+            services.AddScoped<CreateTagHandler>();
+            services.AddScoped<UpdateTagHandler>();
+            services.AddScoped<DeleteTagHandler>();
+            services.AddScoped<GetAllTagHandler>();
+            services.AddScoped<GetTagByIdHandler>();
 
 
             services.AddCors(options =>
@@ -58,7 +67,7 @@ namespace API.Dependency
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy
-                    .WithOrigins("http://localhost:5174")
+                    .WithOrigins("http://localhost:5173")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
