@@ -4,7 +4,7 @@ using API.Repository;
 using API.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 
-namespace API.Service.Dashboard
+namespace API.Service.DashboardService
 {
     public class GetDashboardHandle
     {

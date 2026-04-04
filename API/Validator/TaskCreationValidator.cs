@@ -19,20 +19,20 @@ namespace API.Validator
             }
 
             //Description
-            if (request.Description?.Length > 100)
+            if (request.Description?.Length > 1000)
             {
                 errors.Add("Description max length = 1000");
             }
 
             //Duedate
-            if (request.DueDate != null && request.DueDate.Value < DateTime.UtcNow.AddYears(-10))
+            if (request.DueDate.HasValue && request.DueDate < DateTime.UtcNow.Date)
             {
-                errors.Add("Invalid DueDate.");
+                errors.Add("DueDate cannot be in the past.");
             }
             //category
             if (!request.CategoryId.HasValue)
             {
-                throw new Exception("CategoryId is required");
+                errors.Add("CategoryId is required");
             }
 
             //Tag

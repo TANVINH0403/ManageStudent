@@ -80,7 +80,7 @@ namespace API.Service.TaskService
                 TaskName = request.TaskName.Trim(),
                 Description = request.Description,
                 DueDate = dueDate,
-                Priority = request.Priority,
+                Priority = request.Priority ?? Enum.TaskPriority.Low,
                 CreatedAt = DateTime.UtcNow,
                 Status = Enum.TaskStatus.Todo,
                 UserId = userId,
@@ -109,7 +109,6 @@ namespace API.Service.TaskService
                             CreatedAt = DateTime.UtcNow,
                             UserId = userId
                         };
-                        await _tag.AddAsync(tag);
                     }
                     task.TaskTags.Add(new TaskTag
                     {

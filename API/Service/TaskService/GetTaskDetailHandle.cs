@@ -33,12 +33,7 @@ namespace API.Service.TaskService
                 CategoryName = task.Category != null ? task.Category.CategoryName : null,
 
                 Tags = task.TaskTags.Select(tt => tt.Tag.TagName).ToList(),
-                SubTasks = task.SubTasks.Select(st => new SubTaskDto
-                {
-                    TaskId = st.TaskId,
-                    TaskName = st.TaskName,
-                    Status = st.Status
-                }).ToList(),
+                HasChildren = task.SubTasks != null && task.SubTasks.Any()
             };
         }
     }

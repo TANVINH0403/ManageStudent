@@ -6,11 +6,11 @@ using Task = System.Threading.Tasks.Task;
 
 namespace API.Repository
 {
-    public class UserRepository : IUserRepository
+    public class AuthRepository : IAuthRepository
     {
         private readonly ApplicationDbContext _context;
 
-        public UserRepository(ApplicationDbContext context)
+        public AuthRepository(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -23,6 +23,11 @@ namespace API.Repository
         public Task<User?> GetByUserNameAsync(string username)
         {
             return _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        }
+
+        public async Task<User?> GetByIdAsync(int userId)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
         }
     }
 }

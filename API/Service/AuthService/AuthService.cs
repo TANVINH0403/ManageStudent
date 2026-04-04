@@ -1,5 +1,6 @@
 ﻿using API.Common;
 using API.Dtos.Auth;
+using API.Dtos.User;
 using API.Entities;
 using API.Interfaces;
 using API.UnitOfWork;
@@ -9,24 +10,24 @@ using System.Security.Cryptography;
 
 namespace API.Service.AuthService
 {
-    public class AuthService : IAuthService
+    public class AuthService 
     { 
         private readonly TokenService _tokenService;
         private readonly IUnitOfWork _uow;
-        private readonly IUserRepository _userRepository;
+        private readonly IAuthRepository _authRepository;
         private readonly IPasswordHasher<User> _passwordHasher;
 
-        public AuthService(TokenService tokenService, IUnitOfWork uow, IUserRepository userRepository, IPasswordHasher<User> passwordHasher)
+        public AuthService(TokenService tokenService, IUnitOfWork uow, IAuthRepository userRepository, IPasswordHasher<User> passwordHasher)
         {
             _tokenService = tokenService;
             _uow = uow;
-            _userRepository = userRepository;
+            _authRepository = userRepository;
             _passwordHasher = passwordHasher;
         }
 
         public async Task<Result<LoginResponseDto>> LoginHanleAsync(LoginRequestDto model)
         {
-            var user = await _userRepository.GetByUserNameAsync(model.UserName);
+            var user = await _authRepository.GetByUserNameAsync(model.UserName);
             if (user == null)
             {
                 return new Result<LoginResponseDto>
@@ -61,7 +62,7 @@ namespace API.Service.AuthService
 
         public async Task<Result<RegisterResponseDto>> RegisterHandleAsync(RegisterRequestDto moodel)
         {
-            var existingUser = await _userRepository.GetByUserNameAsync(moodel.Username);
+            var existingUser = await _authRepository.GetByUserNameAsync(moodel.Username);
             if (existingUser != null)
             {
                 return new Result<RegisterResponseDto>
@@ -79,7 +80,7 @@ namespace API.Service.AuthService
             };
             user.PasswordHash = _passwordHasher.HashPassword(user, moodel.Password);
 
-            await _userRepository.AddAsync(user);
+            await _authRepository.AddAsync(user);
             await _uow.SaveChangesAsync();
             return new Result<RegisterResponseDto>
             {
@@ -93,7 +94,18 @@ namespace API.Service.AuthService
             };
         }
 
-
-
+        public async Task<UserDto> GetMeAsync(int userId)
+        {
+            var user = await _authRepository.GetByIdAsync(userId);
+            if(user == null)
+            {
+                throw new Exception("User not found");
+            }
+            return new UserDto
+            {
+                Username = user.UserName,
+                Email = user.Email
+            };
+        }
     }
 }

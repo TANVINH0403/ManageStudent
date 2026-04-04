@@ -2,7 +2,7 @@
 using API.Interfaces;
 using API.UnitOfWork;
 
-namespace API.Service.Dashboard
+namespace API.Service.DashboardService
 {
     public class BoardHandle
     {
