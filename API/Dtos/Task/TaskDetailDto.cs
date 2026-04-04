@@ -15,7 +15,7 @@ namespace API.Dtos.Task
 
         public string? CategoryName { get; set; }
         public List<string> Tags { get; set; } = new List<string>();
-        public List<SubTaskDto> SubTasks { get; set; } = new List<SubTaskDto>();
+        public bool HasChildren { get; set; }
 
     }
 }

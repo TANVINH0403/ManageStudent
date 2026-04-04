@@ -1,4 +1,4 @@
-﻿using API.Service.Dashboard;
+﻿using API.Service.DashboardService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

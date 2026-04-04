@@ -79,7 +79,6 @@ namespace API.Service.TaskService
 
                 if (parent == null)
                     throw new Exception("Parent tasks do not exist.");
-
                 task.ParentId = request.ParentId.Value;
             }
 

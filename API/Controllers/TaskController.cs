@@ -3,6 +3,8 @@ using API.Interfaces;
 using API.Service.TaskService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata;
+using NPOI.POIFS.Properties;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -21,7 +23,8 @@ namespace API.Controllers
         private readonly GetTaskByIdHandle _getTaskById;
         private readonly UpdateStatusHandle _updateStatus;
         private readonly GetTaskHandle _getTaskHandle;
-
+        private readonly GetTasksByCategoryHandle _getTasksByCategory;
+        private readonly GetSubTasksHandle _getSubTasks;
         public TaskController(ILogger<TaskController> logger, 
             GetAllTaskHandle getTaskService,
             CreateTaskHandler createTaskHandler, 
@@ -29,7 +32,9 @@ namespace API.Controllers
             DeleteTaskHandle deleteTask,
             GetTaskByIdHandle getTaskById,
             UpdateStatusHandle updateStatus,
-            GetTaskHandle getTaskHandle
+            GetTaskHandle getTaskHandle,
+            GetTasksByCategoryHandle getTasksByCategory,
+            GetSubTasksHandle getSubTasks
             )
         {
             _logger = logger;
@@ -40,6 +45,8 @@ namespace API.Controllers
             _getTaskById = getTaskById;
             _updateStatus = updateStatus;
             _getTaskHandle = getTaskHandle;
+            _getTasksByCategory = getTasksByCategory;
+            _getSubTasks = getSubTasks;
         }
 
         [HttpGet]
@@ -193,6 +200,36 @@ namespace API.Controllers
             {
                 Message = "Update Status succesfull"
             });
+        }
+
+        [HttpGet("{categoryId}/tasks")]
+        public async Task<IActionResult> GetTasksByCategory(int categoryId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim);
+
+            var result = await _getTasksByCategory.Handle(categoryId, userId);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{parentId}/subtasks")]
+        public async Task<IActionResult> GetSubTask(int parentId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            int userId = int.Parse(userIdClaim);
+
+            var result = await _getSubTasks.Handle(parentId, userId);
+
+            return Ok(result);
         }
     }
 }

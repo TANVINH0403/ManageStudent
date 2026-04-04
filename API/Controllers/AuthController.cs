@@ -1,6 +1,7 @@
 ﻿using API.Common;
 using API.Dtos.Auth;
 using API.Interfaces;
+using API.Service.AuthService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +12,9 @@ namespace API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ILogger<AuthController> _logger;
-        private readonly IAuthService _authService;
+        private readonly AuthService _authService;
 
-        public AuthController(ILogger<AuthController> logger, IAuthService authService)
+        public AuthController(ILogger<AuthController> logger, AuthService authService)
         {
             _logger = logger;
             _authService = authService;
@@ -45,6 +46,32 @@ namespace API.Controllers
             if (!result.Success)
                 return BadRequest(result);
             return Ok(result);
+        }
+
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                return Unauthorized();
+            }
+
+            int userId = int.Parse(userIdClaim);
+
+            try
+            {
+                var result = await _authService.GetMeAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new
+                {
+                    message = ex.Message
+                });
+            }
         }
     }
 }
