@@ -17,7 +17,7 @@ namespace API.Service.TagService
             _uow = uow;
         }
 
-        public async Task<Tag> Handle(TagDto request, int userId)
+        public async Task<TagResponseDto> Handle(TagDto request, int userId)
         {
             if (string.IsNullOrWhiteSpace(request.TagName))
                 throw new Exception("TagName is required");
@@ -33,11 +33,14 @@ namespace API.Service.TagService
                 UserId = userId
             };
 
-            await _tagRepo.AddAsync(tag);
+            await _tagRepo.CreateAsync(tag);
             await _uow.SaveChangesAsync();
 
-            return tag;
+            return new TagResponseDto
+            {
+                TagId = tag.TagId,
+                TagName = tag.TagName
+            };
         }
-
     }
 }

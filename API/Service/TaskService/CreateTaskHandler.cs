@@ -50,7 +50,7 @@ namespace API.Service.TaskService
             //        UserId = userId
             //    };
 
-            //    await _category.AddAsync(category);
+            //    await _category.CreateAsync(category);
             //    await _uow.SaveChangesAsync();
             //}
 

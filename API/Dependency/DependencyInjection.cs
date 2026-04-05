@@ -4,6 +4,7 @@ using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
 using API.Service.DashboardService;
+using API.Service.TagService;
 using API.Service.TaskService;
 using API.UnitOfWork;
 using API.Validator;
@@ -53,7 +54,12 @@ namespace API.Dependency
             services.AddScoped<BoardHandle>();
             services.AddScoped<UpdateVisibility>();
 
-
+            //Tag
+            services.AddScoped<CreateTagHandler>();
+            services.AddScoped<UpdateTagHandler>();
+            services.AddScoped<DeleteTagHandler>();
+            services.AddScoped<GetAllTagHandler>();
+            services.AddScoped<GetTagByIdHandler>();
 
 
             services.AddCors(options =>
