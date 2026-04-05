@@ -43,7 +43,7 @@ namespace API.Controllers
 
             try
             {
-                var tag = await _tagHandler.Handle(request, userId);
+            var tag = await _tagHandler.Handle(request, userId);
                 return Ok(tag);
             }
             catch (Exception ex)
@@ -62,8 +62,8 @@ namespace API.Controllers
             try
             {
                 var tag = await _updateTagHandler.Handle(id, request, userId);
-                return Ok(tag);
-            }
+            return Ok(tag);
+        }
             catch (Exception ex)
             {
                 return BadRequest(new
