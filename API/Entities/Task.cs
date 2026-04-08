@@ -23,6 +23,7 @@ namespace API.Entities
         public Category Category { get; set; }
         public ICollection<TaskTag> TaskTags { get; set; }
         public ICollection<Task> SubTasks { get; set; }
+        public ICollection<TaskAttachment> Attachments { get; set; }
 
     }
 }

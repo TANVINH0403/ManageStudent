@@ -131,6 +131,35 @@ namespace API.Migrations
                     b.ToTable("Tasks");
                 });
 
+            modelBuilder.Entity("API.Entities.TaskAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TaskAttachments");
+                });
+
             modelBuilder.Entity("API.Entities.TaskTag", b =>
                 {
                     b.Property<int>("TaskId")
@@ -419,6 +448,17 @@ namespace API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("API.Entities.TaskAttachment", b =>
+                {
+                    b.HasOne("API.Entities.Task", "Task")
+                        .WithMany("Attachments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+                });
+
             modelBuilder.Entity("API.Entities.TaskTag", b =>
                 {
                     b.HasOne("API.Entities.Tag", "Tag")
@@ -501,6 +541,8 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Entities.Task", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("SubTasks");
 
                     b.Navigation("TaskTags");
