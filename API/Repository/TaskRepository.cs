@@ -107,7 +107,9 @@ namespace API.Repository
         {
             return _context.Tasks
                 .Include(x => x.Category)
-                .Where(x => x.UserId == userId || (x.Category != null && x.Category.Visibility == Visibility.Public));
+                .Where(x => x.UserId == userId 
+                //|| (x.Category != null && x.Category.Visibility == Visibility.Public)
+                );
         }
 
         public void Remove(Entities.Task task)

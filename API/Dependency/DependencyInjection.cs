@@ -4,6 +4,7 @@ using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
 using API.Service.DashboardService;
+using API.Service.FileService;
 using API.Service.TagService;
 using API.Service.TaskService;
 using API.UnitOfWork;
@@ -61,6 +62,12 @@ namespace API.Dependency
             services.AddScoped<GetAllTagHandler>();
             services.AddScoped<GetTagByIdHandler>();
 
+
+            //file
+            services.AddScoped<ITaskFileRepository, TaskFileRepository>();
+            services.AddScoped<UploadFileHandler>();
+            services.AddScoped<GetFileHandler>();
+            services.AddScoped<DeleteFileHandler>();
 
             services.AddCors(options =>
             {
