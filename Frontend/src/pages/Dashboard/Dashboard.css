@@ -1,242 +1,82 @@
-/* --- PHONG CÁCH TỐI GIẢN (ULTRA-MINIMALIST) --- */
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 32px; /* Tăng khoảng cách để tạo độ "thở" */
-  height: 100%;
-  color: #111827; /* Màu chữ chính gần như đen */
+:root {
+  /* HỆ MÀU CHÍNH THỨC - Sửa ở đây là toàn bộ Web tự đổi màu */
+  --sales-primary: #818cf8;
+  --sales-primary-light: #e0e7ff;
+  --sales-bg: #f3f4f9;
+  --sales-card-bg: #ffffff;
+  --sales-text-main: #1f2937;
+  --sales-text-muted: #6b7280;
+  --sales-text-light: #9ca3af;
+  --sales-red: #f87171;
+  --sales-green: #34d399;
+  --sales-border: #f1f5f9;
+  --sales-radius: 12px;
 }
 
-/* HEADER */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f3f4f6; /* Đường line mỏng phân cách header */
+.sales-dashboard-wrapper {
+  background-color: var(--sales-bg) !important;
+  padding: 16px 24px; display: flex; flex-direction: column; gap: 24px; min-height: 100%;
+  font-family: 'Inter', system-ui, sans-serif !important; color: var(--sales-text-main) !important;
 }
 
-.dashboard-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em; /* Ép chữ lại một chút cho sang */
-  margin-bottom: 8px;
+.sales-dashboard-wrapper .dashboard-topbar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+.sales-dashboard-wrapper .title-area h2 { font-size: 1.5rem !important; font-weight: 700 !important; margin: 0 0 4px 0 !important; color: var(--sales-text-main); }
+.sales-dashboard-wrapper .subtitle-date { font-size: 0.9rem; color: var(--sales-text-light); font-weight: 500; }
+
+.sales-dashboard-wrapper .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.sales-dashboard-wrapper .kpi-card {
+  background: var(--sales-card-bg); border-radius: var(--sales-radius); padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border: 1px solid var(--sales-border); min-height: 110px;
 }
 
-.dashboard-header p {
-  color: #6b7280;
-  font-size: 0.95rem;
-  font-weight: 400;
+.sales-dashboard-wrapper .kpi-info { display: flex; flex-direction: column; gap: 6px; width: 65%; }
+.sales-dashboard-wrapper .kpi-label { font-size: 0.85rem !important; font-weight: 600 !important; color: var(--sales-text-muted); }
+.sales-dashboard-wrapper .kpi-value { font-size: 1.8rem !important; font-weight: 700 !important; color: var(--sales-text-main); margin: 4px 0; }
+.sales-dashboard-wrapper .kpi-change { font-size: 0.75rem !important; font-weight: 700 !important; display: flex; align-items: center; gap: 4px; }
+.sales-dashboard-wrapper .kpi-change.negative { color: var(--sales-red); }
+.sales-dashboard-wrapper .kpi-change.positive { color: var(--sales-green); }
+.sales-dashboard-wrapper .kpi-chart { width: 35%; height: 50px; margin-top: 10px; }
+
+.sales-dashboard-wrapper .charts-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.sales-dashboard-wrapper .chart-card {
+  background: var(--sales-card-bg); border-radius: var(--sales-radius); padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid var(--sales-border); display: flex; flex-direction: column;
 }
 
-.btn-reset {
-  font-size: 0.85rem;
-  padding: 6px 16px;
-  border: 1px solid #e5e7eb;
-  background: white;
-  border-radius: 6px;
-  color: #374151;
-  transition: all 0.2s;
-}
-.btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
+.sales-dashboard-wrapper .chart-title { font-size: 1rem !important; font-weight: 700 !important; color: var(--sales-text-main); margin: 0 0 12px 0 !important; }
+.sales-dashboard-wrapper .chart-legend-custom { display: flex; gap: 16px; font-size: 0.8rem; color: var(--sales-text-muted); font-weight: 500; margin-bottom: 20px; }
 
-/* --- STAT CARDS (THIẾT KẾ PHẲNG, VIỀN MỎNG) --- */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-}
+/* --- QUẢN LÝ CÁC DẤU CHẤM MÀU (Tách biệt khỏi JSX) --- */
+.sales-dashboard-wrapper .chart-legend-custom .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.bg-primary-dot { background-color: var(--sales-primary); }
+.bg-gray-dot { background-color: var(--sales-text-light); }
+.bg-dark-dot { background-color: var(--sales-text-main); }
 
-.stat-card {
-  background: #ffffff;
-  padding: 24px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb; /* Viền xám rất nhạt */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
+.sales-dashboard-wrapper .chart-wrapper-h200 { height: 220px; width: 100%; }
 
-/* Thanh màu mỏng ở mép trên của card để nhận diện trạng thái */
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: transparent;
-  transition: background 0.2s;
-}
+.sales-dashboard-wrapper .charts-row-bottom { display: grid; grid-template-columns: 1.2fr 2fr; gap: 20px; }
+.sales-dashboard-wrapper .chart-wrapper-h250 { height: 280px; width: 100%; }
 
-.stat-card.blue::before { background: #3b82f6; }
-.stat-card.orange::before { background: #f59e0b; }
-.stat-card.green::before { background: #10b981; }
-.stat-card.red::before { background: #ef4444; }
+.sales-dashboard-wrapper .table-responsive { width: 100%; overflow-x: auto; margin-top: 12px; }
+.sales-dashboard-wrapper .student-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.sales-dashboard-wrapper .student-table th { text-align: left; padding: 12px 10px; color: var(--sales-text-muted); font-weight: 600; border-bottom: 1px solid var(--sales-border); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+.sales-dashboard-wrapper .student-table td { padding: 14px 10px; color: var(--sales-text-main); border-bottom: 1px solid #f9fafb; }
+.align-right { text-align: right !important; }
 
-/* Trạng thái Hover & Active: Không nổi khối to đùng nữa, chỉ đậm viền lên */
-.stat-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
+.status-badge-custom { padding: 6px 12px; border-radius: 4px; font-weight: 600; display: inline-block; font-size: 0.8rem; }
+.bg-purple { background: #eef2ff; color: #4f46e5; }
+.bg-red { background: #fef2f2; color: #ef4444; }
 
-.stat-card.active {
-  border-color: #111827; /* Nhấn bằng viền đen mờ khi active */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* Sắp xếp lại nội dung card: Icon nhỏ, chữ to */
-.stat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-header p {
-  font-size: 0.85rem;
-  color: #6b7280;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.stat-icon {
-  color: #9ca3af; /* Icon xám trung tính */
-}
-
-.stat-info h3 {
-  font-size: 2.2rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #111827;
-}
-
-/* --- KHU VỰC DƯỚI (BIỂU ĐỒ & DANH SÁCH) --- */
-.dashboard-lower-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  flex: 1;
-  min-height: 0;
-}
-
-.dashboard-card {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #f3f4f6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-header h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.subtitle {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-/* Biểu đồ - Sạch sẽ hơn */
-.chart-wrapper {
-  flex: 1;
-  padding: 24px 24px 8px 0;
-  min-height: 280px;
-}
-
-/* --- DANH SÁCH TASK MINI --- */
-.upcoming-tasks {
-  display: flex;
-  flex-direction: column;
-}
-
-.task-mini-list {
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-/* Thẻ task không còn nền xám nguyên khối, chỉ có đường kẻ phân chia (divider) */
-.task-mini-item {
-  display: flex;
-  padding: 16px 12px;
-  border-bottom: 1px solid #f3f4f6;
-  transition: background 0.2s;
-}
-
-.task-mini-item:last-child { border-bottom: none; }
-.task-mini-item:hover { background: #f9fafb; border-radius: 8px; }
-
-/* Nút checkbox (Circle) thay cho cục vuông */
-.check-wrapper {
-  margin-right: 12px;
-  margin-top: 2px;
-  color: #d1d5db;
-}
-.check-wrapper:hover { color: #10b981; }
-
-.task-mini-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.task-mini-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.task-mini-header h4 {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #111827;
-  line-height: 1.4;
-}
-
-.task-mini-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-.meta-date { display: flex; align-items: center; gap: 4px; }
-
-/* Status: Dùng dấu chấm (dot) thay vì nguyên cái pill to */
-.status-dot-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-dot.Pending { background: #f59e0b; }
-.status-dot.InProgress { background: #3b82f6; }
-.status-dot.Completed { background: #10b981; }
-
-.status-text.Pending { color: #f59e0b; }
-.status-text.InProgress { color: #3b82f6; }
-.status-text.Completed { color: #10b981; }
-
-.empty-state-mini {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100%; gap: 12px; color: #9ca3af; font-size: 0.9rem; text-align: center;
-}
+.sales-dashboard-wrapper .clickable { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.sales-dashboard-wrapper .clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(129, 140, 248, 0.1) !important; }
+.sales-dashboard-wrapper .clickable-row:hover { background-color: #f8fafc; cursor: pointer; }
+.card-header-with-link { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.btn-view-all { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 0.8rem; font-weight: 600; color: var(--sales-primary); cursor: pointer; }
+.btn-view-all:hover { color: #4f46e5; }
+.text-gray { color: var(--sales-text-muted); }
+.text-red { color: var(--sales-red) !important; }
+.fw-600 { font-weight: 600; }
+.recharts-tooltip-cursor { fill: transparent; stroke: #e5e7eb; stroke-width: 1; stroke-dasharray: 4 4; }
