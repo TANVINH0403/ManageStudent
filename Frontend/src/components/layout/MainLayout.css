@@ -1,139 +1,91 @@
+:root {
+  --app-bg: #f5f6fa;
+  --primary: #7c3aed;
+  --text-light: #9ca3af;
+}
+
+/* Ép toàn bộ app tràn viền, không bị lơ lửng */
 .layout-wrapper {
   display: flex;
   width: 100vw;
   height: 100vh;
-  padding: 16px; /* Tạo khoảng trống bao quanh giống Dashboard hiện đại */
-  background: linear-gradient(135deg, #f0f4f9 0%, #e2e8f0 100%);
-  gap: 16px;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: var(--app-bg) !important;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* SIDEBAR - Hiệu ứng Glassmorphism */
+/* SIDEBAR VỚI HIỆU ỨNG GRADIENT TỎA SÁNG GÓC DƯỚI TRÁI */
 .sidebar-glass {
-  width: 280px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
+  width: 260px;
+  background: radial-gradient(circle at -10% 110%, #4c1d95 0%, #1e1b4b 45%, #0f172a 100%) !important;
   display: flex;
   flex-direction: column;
-  padding: 32px 16px;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 24px 16px;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  z-index: 10;
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 16px 40px;
+  display: flex; align-items: center; gap: 12px; padding: 0 16px 40px;
 }
+.logo-icon { font-size: 1.8rem; color: #ffffff; }
+.logo-text { font-size: 1.3rem; font-weight: 700; color: #ffffff; }
+.logo-text span { color: #a78bfa; }
 
-.logo-icon { font-size: 2rem; }
-.logo-text { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
-.logo-text span { color: var(--primary); }
-
-.nav-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.nav-list { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 
 .nav-link {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  color: var(--text-light);
-  font-weight: 500;
-  border-radius: 16px;
-  transition: var(--transition);
+  display: flex; align-items: center; padding: 12px 16px;
+  text-decoration: none; color: var(--text-light); font-weight: 500;
+  border-radius: 8px; transition: all 0.2s ease; font-size: 0.95rem;
 }
 
 .nav-link:hover {
-  background: rgba(51, 120, 255, 0.05);
-  color: var(--primary);
-  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.08); color: #ffffff;
 }
 
+/* NÚT ACTIVE: Viền trái màu tím sáng, nền gradient mờ dần */
 .nav-link.active {
-  background: var(--primary);
-  color: #fff;
-  box-shadow: 0 10px 20px rgba(51, 120, 255, 0.3);
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.2) 0%, rgba(124, 58, 237, 0) 100%) !important;
+  color: #fff !important;
+  border-left: 3px solid var(--primary) !important;
+  border-radius: 0 8px 8px 0 !important;
+  box-shadow: none !important;
 }
 
 .icon-wrapper { margin-right: 12px; font-size: 1.2rem; }
 
-/* MAIN CONTAINER */
-.main-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* MAIN CONTAINER & HEADER */
+.main-container { flex: 1; display: flex; flex-direction: column; background: var(--app-bg); }
 
-/* HEADER */
 .header-glass {
-  height: 80px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  padding: 0 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  height: 70px; background: #ffffff !important;
+  padding: 0 32px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #e5e7eb !important; border-radius: 0 !important; box-shadow: none !important; z-index: 5;
 }
 
 .search-box {
-  background: #f1f5f9;
-  padding: 10px 20px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  width: 400px;
+  background: #f1f5f9; padding: 8px 16px; border-radius: 8px;
+  display: flex; align-items: center; width: 350px; border: 1px solid transparent; transition: all 0.2s;
 }
-
-.search-box input {
-  background: transparent;
-  border: none;
-  outline: none;
-  margin-left: 10px;
-  width: 100%;
-  font-family: inherit;
-}
+.search-box:focus-within { background: #ffffff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1); }
+.search-box input { background: transparent; border: none; outline: none; margin-left: 10px; width: 100%; color: #1f2937; }
 
 .header-right { display: flex; align-items: center; gap: 20px; }
 
 .btn-primary-gradient {
-  background: linear-gradient(135deg, #3378ff 0%, #1e56cc 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(51, 120, 255, 0.3);
-  transition: var(--transition);
+  background: var(--primary) !important; color: white !important; border: none; padding: 10px 20px;
+  border-radius: 8px !important; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: none !important;
 }
+.btn-primary-gradient:hover { background: #6d28d9 !important; }
 
-.btn-primary-gradient:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(51, 120, 255, 0.4); }
+.user-card { display: flex; align-items: center; gap: 12px; padding-left: 20px; border-left: 1px solid #e5e7eb; }
+.user-card img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.user-name { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
+.user-role { font-size: 0.75rem; color: #6b7280; }
 
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-left: 20px;
-  border-left: 1px solid #e2e8f0;
-}
-
-.user-card img { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
-.user-name { font-weight: 700; font-size: 0.95rem; }
-.user-role { font-size: 0.8rem; color: var(--text-light); }
-
-/* CONTENT BODY */
-.content-body {
-  flex: 1;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  overflow-y: auto;
-}
+.content-body { flex: 1; background: transparent !important; padding: 0 !important; border: none !important; box-shadow: none !important; overflow-y: auto; }
