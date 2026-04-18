@@ -1,10 +1,10 @@
-/* --- PHONG CÁCH TỐI GIẢN (ULTRA-MINIMALIST) --- */
+/* --- DASHBOARD CONTENT --- */
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  gap: 32px; /* Tăng khoảng cách để tạo độ "thở" */
+  gap: 28px;
   height: 100%;
-  color: #111827; /* Màu chữ chính gần như đen */
+  color: #111827;
 }
 
 /* HEADER */
@@ -13,55 +13,58 @@
   justify-content: space-between;
   align-items: flex-end;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f3f4f6; /* Đường line mỏng phân cách header */
+  border-bottom: 1px solid #f3f4f6;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dashboard-header h1 {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   font-weight: 600;
-  letter-spacing: -0.02em; /* Ép chữ lại một chút cho sang */
-  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
 }
 
 .dashboard-header p {
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.5vw, 0.95rem);
   font-weight: 400;
 }
 
 .btn-reset {
   font-size: 0.85rem;
-  padding: 6px 16px;
+  padding: 6px 14px;
   border: 1px solid #e5e7eb;
   background: white;
   border-radius: 6px;
   color: #374151;
   transition: all 0.2s;
+  white-space: nowrap;
+  cursor: pointer;
 }
 .btn-reset:hover { background: #f9fafb; border-color: #d1d5db; }
 
-/* --- STAT CARDS (THIẾT KẾ PHẲNG, VIỀN MỎNG) --- */
+/* --- STAT CARDS --- */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 16px;
 }
 
 .stat-card {
   background: #ffffff;
-  padding: 24px;
+  padding: 20px;
   border-radius: 12px;
-  border: 1px solid #e5e7eb; /* Viền xám rất nhạt */
+  border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-/* Thanh màu mỏng ở mép trên của card để nhận diện trạng thái */
 .stat-card::before {
   content: '';
   position: absolute;
@@ -71,23 +74,21 @@
   transition: background 0.2s;
 }
 
-.stat-card.blue::before { background: #3b82f6; }
+.stat-card.blue::before   { background: #3b82f6; }
 .stat-card.orange::before { background: #f59e0b; }
-.stat-card.green::before { background: #10b981; }
-.stat-card.red::before { background: #ef4444; }
+.stat-card.green::before  { background: #10b981; }
+.stat-card.red::before    { background: #ef4444; }
 
-/* Trạng thái Hover & Active: Không nổi khối to đùng nữa, chỉ đậm viền lên */
 .stat-card:hover {
   border-color: #d1d5db;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
 .stat-card.active {
-  border-color: #111827; /* Nhấn bằng viền đen mờ khi active */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: #111827;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
-/* Sắp xếp lại nội dung card: Icon nhỏ, chữ to */
 .stat-header {
   display: flex;
   justify-content: space-between;
@@ -95,29 +96,27 @@
 }
 
 .stat-header p {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #6b7280;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.stat-icon {
-  color: #9ca3af; /* Icon xám trung tính */
-}
+.stat-icon { color: #9ca3af; }
 
 .stat-info h3 {
-  font-size: 2.2rem;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #111827;
 }
 
-/* --- KHU VỰC DƯỚI (BIỂU ĐỒ & DANH SÁCH) --- */
+/* --- LOWER GRID --- */
 .dashboard-lower-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 24px;
+  gap: 16px;
   flex: 1;
   min-height: 0;
 }
@@ -128,51 +127,52 @@
   border: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .card-header {
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f3f4f6;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .card-header h3 {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .subtitle {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #6b7280;
 }
 
-/* Biểu đồ - Sạch sẽ hơn */
 .chart-wrapper {
   flex: 1;
-  padding: 24px 24px 8px 0;
-  min-height: 280px;
+  padding: 16px 16px 8px 0;
+  min-height: 220px;
 }
 
-/* --- DANH SÁCH TASK MINI --- */
+/* --- TASK MINI LIST --- */
 .upcoming-tasks {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .task-mini-list {
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 8px;
   overflow-y: auto;
   flex: 1;
 }
 
-/* Thẻ task không còn nền xám nguyên khối, chỉ có đường kẻ phân chia (divider) */
 .task-mini-item {
   display: flex;
-  padding: 16px 12px;
+  padding: 14px 10px;
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.2s;
 }
@@ -180,9 +180,8 @@
 .task-mini-item:last-child { border-bottom: none; }
 .task-mini-item:hover { background: #f9fafb; border-radius: 8px; }
 
-/* Nút checkbox (Circle) thay cho cục vuông */
 .check-wrapper {
-  margin-right: 12px;
+  margin-right: 10px;
   margin-top: 2px;
   color: #d1d5db;
 }
@@ -192,51 +191,105 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
 
 .task-mini-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 8px;
 }
 
 .task-mini-header h4 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #111827;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .task-mini-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 0.8rem;
+  gap: 12px;
+  font-size: 0.78rem;
   color: #6b7280;
+  flex-wrap: wrap;
 }
 
 .meta-date { display: flex; align-items: center; gap: 4px; }
 
-/* Status: Dùng dấu chấm (dot) thay vì nguyên cái pill to */
 .status-dot-wrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
+  gap: 5px;
+  font-size: 0.78rem;
   font-weight: 500;
 }
 
-.status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-dot.Pending { background: #f59e0b; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.Pending    { background: #f59e0b; }
 .status-dot.InProgress { background: #3b82f6; }
-.status-dot.Completed { background: #10b981; }
+.status-dot.Completed  { background: #10b981; }
 
-.status-text.Pending { color: #f59e0b; }
+.status-text.Pending    { color: #f59e0b; }
 .status-text.InProgress { color: #3b82f6; }
-.status-text.Completed { color: #10b981; }
+.status-text.Completed  { color: #10b981; }
 
 .empty-state-mini {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100%; gap: 12px; color: #9ca3af; font-size: 0.9rem; text-align: center;
+  height: 100%; gap: 12px; color: #9ca3af; font-size: 0.875rem; text-align: center;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+/* Tablet landscape */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet portrait */
+@media (max-width: 900px) {
+  .dashboard-lower-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    min-height: 200px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 599px) {
+  .dashboard-content { gap: 18px; }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card { padding: 14px; gap: 10px; }
+  .stat-info h3 { font-size: 1.8rem; }
+
+  .dashboard-lower-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card-header { padding: 12px 14px; }
+  .chart-wrapper { min-height: 180px; padding: 12px 8px 4px 0; }
+}
+
+/* Very small */
+@media (max-width: 380px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 12px; }
 }

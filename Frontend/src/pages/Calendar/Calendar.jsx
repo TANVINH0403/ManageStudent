@@ -1,16 +1,53 @@
-import React, { useState } from 'react';
-import { mockTasks } from '../../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import taskService from '../../services/taskService';
+import categoryService from '../../services/categoryService';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, X, CheckCircle2, Circle, PlusCircle } from 'lucide-react';
 import './Calendar.css';
 
+const getPriorityLabel = (p) => {
+    switch(p) {
+        case 0: return 'Low';
+        case 1: return 'Medium';
+        case 2: return 'High';
+        default: return 'Low';
+    }
+}
+
 const Calendar = () => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
-  const [localTasks, setLocalTasks] = useState(mockTasks); // Quản lý task để thêm/sửa
+  const [localTasks, setLocalTasks] = useState([]); 
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // State cho Modal "Thêm sự kiện" tổng
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState(''); // Cho Quick Add trong panel
+  const [formData, setFormData] = useState({ taskName: '', categoryId: '', priority: 1, dueDate: '' });
+
+  useEffect(() => {
+     const fetchData = async () => {
+         try {
+             setLoading(true);
+             const [taskRes, catRes] = await Promise.all([
+                 taskService.getTasks({ PageSize: 100 }),
+                 categoryService.getAllCategories()
+             ]);
+             if(taskRes?.data) setLocalTasks(taskRes.data);
+             if(catRes) {
+                 if (Array.isArray(catRes)) setCategories(catRes);
+                 else if (catRes.data && Array.isArray(catRes.data)) setCategories(catRes.data);
+             }
+         } catch(err) {
+             console.error(err);
+         } finally {
+             setLoading(false);
+         }
+     }
+     fetchData();
+  }, []);
 
   // Tính toán ngày tháng
   const year = currentDate.getFullYear();
@@ -28,7 +65,8 @@ const Calendar = () => {
   // Lấy task cho ngày
   const getTasksForDate = (day) => {
     return localTasks.filter(task => {
-      const taskDate = new Date(task.deadline);
+      if(!task.dueDate) return false;
+      const taskDate = new Date(task.dueDate);
       return taskDate.getDate() === day && taskDate.getMonth() === month && taskDate.getFullYear() === year;
     });
   };
@@ -36,46 +74,83 @@ const Calendar = () => {
   const tasksOnSelectedDate = selectedDate ? getTasksForDate(selectedDate) : [];
 
   // UX: Tạo Task nhanh cho đúng ngày đang mở
-  const handleQuickAdd = (e) => {
+  const handleQuickAdd = async (e) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
-      const formattedMonth = String(month + 1).padStart(2, '0');
-      const formattedDay = String(selectedDate).padStart(2, '0');
+      if (categories.length === 0) {
+          alert('Bạn cần tạo Project (Danh mục) trước khi tạo sự kiện!');
+          navigate('/categories');
+          return;
+      }
+      try {
+          const formattedMonth = String(month + 1).padStart(2, '0');
+          const formattedDay = String(selectedDate).padStart(2, '0');
+          const isoDate = `${year}-${formattedMonth}-${formattedDay}T12:00:00.000Z`;
 
-      const newTask = {
-        id: Date.now(),
-        title: newTaskTitle,
-        description: 'Được tạo nhanh từ Lịch',
-        categoryId: 4, // Mặc định danh mục cá nhân
-        status: 'Pending',
-        priority: 'Medium',
-        deadline: `${year}-${formattedMonth}-${formattedDay}T23:59:00` // Gán đúng ngày đang chọn
-      };
-
-      setLocalTasks([...localTasks, newTask]);
-      setNewTaskTitle(''); // Reset ô nhập
+          const res = await taskService.createTask({
+            taskName: newTaskTitle,
+            description: 'Được tạo nhanh từ Lịch',
+            categoryId: categories[0].categoryId || categories[0].id, 
+            status: 0, 
+            priority: 1, 
+            dueDate: isoDate 
+          });
+          
+          if(res) setLocalTasks([...localTasks, res]);
+          setNewTaskTitle('');
+      } catch(err) {
+          alert("Lỗi tạo: " + JSON.stringify(err.response?.data || err.message));
+      }
     }
   };
 
-  // Giả lập lưu Form Modal
-  const handleModalSubmit = (e) => {
+  const handleOpenAddModal = () => {
+      if (categories.length === 0) {
+          alert('Bạn cần tạo Project (Danh mục) trước khi tạo sự kiện!');
+          navigate('/categories');
+          return;
+      }
+      setFormData({
+          taskName: '',
+          categoryId: categories[0].categoryId || categories[0].id,
+          priority: 1,
+          dueDate: ''
+      });
+      setIsAddModalOpen(true);
+  };
+
+  const handleModalSubmit = async (e) => {
     e.preventDefault();
-    alert("Đã lưu sự kiện mới! (Chờ gắn API)");
-    setIsAddModalOpen(false);
+    if (!formData.taskName.trim() || !formData.categoryId || !formData.dueDate) return;
+    try {
+        const res = await taskService.createTask({
+            taskName: formData.taskName,
+            categoryId: parseInt(formData.categoryId),
+            status: 0,
+            priority: parseInt(formData.priority),
+            dueDate: new Date(formData.dueDate).toISOString()
+        });
+        if(res) setLocalTasks([...localTasks, res]);
+        setIsAddModalOpen(false);
+    } catch(err) {
+        alert("Lỗi tạo: " + JSON.stringify(err.response?.data || err.message));
+    }
   };
 
   return (
     <div className="calendar-page">
-      {/* HEADER FIX LAYOUT */}
       <div className="cal-page-header">
         <div className="title-area">
           <h1>Calendar</h1>
           <p>Theo dõi deadline và lịch trình công việc của bạn.</p>
         </div>
-        <button className="btn-primary" onClick={() => setIsAddModalOpen(true)}>
+        <button className="btn-primary" onClick={handleOpenAddModal}>
           <Plus size={18} style={{ marginRight: '6px' }} /> Thêm Sự kiện
         </button>
       </div>
 
+      {loading ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Đang tải lịch...</div>
+      ) : (
       <div className="calendar-container">
         {/* CONTROLS LỊCH */}
         <div className="calendar-controls">
@@ -108,8 +183,8 @@ const Calendar = () => {
                 <div className="day-number">{day}</div>
                 <div className="day-tasks">
                   {dayTasks.map(task => (
-                    <div key={task.id} className={`task-pill ${task.priority}`} title={task.title}>
-                      {task.title}
+                    <div key={task.taskId} className={`task-pill ${getPriorityLabel(task.priority)}`} title={task.taskName}>
+                      {task.taskName}
                     </div>
                   ))}
                 </div>
@@ -118,6 +193,7 @@ const Calendar = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* --- PANEL CHI TIẾT NGÀY & TẠO NHANH --- */}
       {selectedDate && <div className="overlay" onClick={() => setSelectedDate(null)}></div>}
@@ -151,19 +227,19 @@ const Calendar = () => {
               <div className="cat-task-list">
                 {tasksOnSelectedDate.length > 0 ? (
                   tasksOnSelectedDate.map(task => (
-                    <div key={task.id} className="cat-task-item">
-                      {task.status === 'Completed' ? (
+                    <div key={task.taskId} className="cat-task-item">
+                      {task.status === 2 ? (
                         <CheckCircle2 size={18} color="#10b981" className="task-icon"/>
                       ) : (
                         <Circle size={18} color="#cbd5e1" className="task-icon"/>
                       )}
                       <div className="task-info">
-                        <span className={`task-name ${task.status === 'Completed' ? 'completed' : ''}`}>
-                          {task.title}
+                        <span className={`task-name ${task.status === 2 ? 'completed' : ''}`}>
+                          {task.taskName}
                         </span>
                         <div className="task-meta">
-                          <span className={`badge-priority ${task.priority}`}>{task.priority}</span>
-                          <span className="task-time"><Clock size={12}/> {new Date(task.deadline).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                          <span className={`badge-priority ${getPriorityLabel(task.priority)}`}>{getPriorityLabel(task.priority)}</span>
+                          <span className="task-time"><Clock size={12}/> {new Date(task.dueDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                       </div>
                     </div>
@@ -188,26 +264,28 @@ const Calendar = () => {
             <form className="modal-body" onSubmit={handleModalSubmit}>
               <div className="form-group">
                 <label>Tên công việc</label>
-                <input type="text" placeholder="Nhập tên công việc..." required />
+                <input type="text" placeholder="Nhập tên..." value={formData.taskName} onChange={e => setFormData({...formData, taskName: e.target.value})} required />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Ngày</label>
-                  <input type="date" required />
-                </div>
-                <div className="form-group">
-                  <label>Giờ (Tùy chọn)</label>
-                  <input type="time" />
+                  <label>Mốc Deadline</label>
+                  <input type="datetime-local" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Danh mục</label>
-                  <select><option>Học tập</option><option>Cá nhân</option></select>
+                  <select value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})} required>
+                     {categories.map(c => <option key={c.categoryId || c.id} value={c.categoryId || c.id}>{c.categoryName || c.name}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Mức ưu tiên</label>
-                  <select><option>High</option><option>Medium</option><option>Low</option></select>
+                  <select value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})}>
+                      <option value={2}>High</option>
+                      <option value={1}>Medium</option>
+                      <option value={0}>Low</option>
+                  </select>
                 </div>
               </div>
               <div className="modal-footer">

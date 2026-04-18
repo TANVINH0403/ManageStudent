@@ -1,27 +1,55 @@
-import React, { useState, useRef } from 'react';
-import { mockUser, mockTasks } from '../../data/mockData';
+import React, { useState, useEffect, useRef } from 'react';
+import { mockUser } from '../../data/mockData';
+import dashboardService from '../../services/dashboardService';
+import userService from '../../services/userService';
 import { Camera, Mail, Phone, MapPin, Link as LinkIcon, Edit3, Award, CheckCircle2, Clock, Plus, Trash2 } from 'lucide-react';
 import './Profile.css';
 
 const Profile = () => {
-  const completedTasks = mockTasks.filter(t => t.status === 'Completed').length;
-  const pendingTasks = mockTasks.filter(t => t.status !== 'Completed').length;
+  const [completedTasks, setCompletedTasks] = useState(0);
+  const [pendingTasks, setPendingTasks] = useState(0);
 
-  const [isEditing, setIsEditing] = useState(false);
-
-  // State quản lý Avatar
-  const [avatar, setAvatar] = useState(mockUser.avatar);
-  const fileInputRef = useRef(null); // Ref để trigger thẻ input file ẩn
-
-  // State quản lý thông tin chung
   const [profileData, setProfileData] = useState({
-    username: mockUser.username,
+    username: '',
     role: 'Sinh viên IT - Năm 3',
-    bio: 'Đam mê lập trình Frontend, thích thiết kế UI/UX và tối ưu hóa trải nghiệm người dùng. Luôn sẵn sàng học hỏi công nghệ mới.',
-    email: mockUser.email,
+    bio: 'Đang tải...',
+    email: '',
     phone: '0123 456 789',
     location: 'TP. Hồ Chí Minh',
   });
+
+  const [avatar, setAvatar] = useState(mockUser.avatar);
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        try {
+           const [statsRes, profileRes] = await Promise.all([
+               dashboardService.getDashboardStats(),
+               userService.getProfile()
+           ]);
+
+           if(statsRes?.statusOverview) {
+               setCompletedTasks(statsRes.statusOverview.completed);
+               setPendingTasks(statsRes.statusOverview.todo + statsRes.statusOverview.inProgress);
+           }
+
+            if(profileRes) {
+                setProfileData(prev => ({
+                    ...prev,
+                    username: profileRes.username || profileRes.userName || '',
+                    email: profileRes.email || '',
+                    bio: profileRes.bio || 'Chưa có giới thiệu.'
+                }));
+                if (profileRes.avatar) setAvatar(profileRes.avatar);
+            }
+        } catch(err) {
+            console.error(err);
+        }
+    };
+    fetchData();
+  }, []);
 
   // State quản lý danh sách Link (Dynamic Array)
   const [links, setLinks] = useState([
@@ -66,13 +94,23 @@ const Profile = () => {
   };
 
   // 4. Xử lý Lưu
-  const handleSave = () => {
-    // Kiểm tra xem có link nào bị bỏ trống tên không
-    const validLinks = links.filter(link => link.name.trim() !== '');
-    setLinks(validLinks);
+  const handleSave = async () => {
+    try {
+        await userService.updateProfile({
+            username: profileData.username,
+            bio: profileData.bio,
+            email: profileData.email
+            // Có thể thêm phone, location nếu API backend hỗ trợ trong UserDto
+        });
+        
+        const validLinks = links.filter(link => link.name.trim() !== '');
+        setLinks(validLinks);
 
-    setIsEditing(false);
-    alert("Tuyệt vời! Đã lưu hồ sơ cá nhân thành công.");
+        setIsEditing(false);
+        alert("Tuyệt vời! Đã lưu hồ sơ cá nhân thành công.");
+    } catch(err) {
+        alert("Lỗi cập nhật: " + JSON.stringify(err.response?.data || err.message));
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-﻿using API.Dtos.Board;
+using API.Dtos.Board;
 using API.Interfaces;
 using API.UnitOfWork;
 
@@ -25,6 +25,10 @@ namespace API.Service.DashboardService
                 {
                     TaskId = x.TaskId,
                     TaskName = x.TaskName,
+                    Description = x.Description,
+                    DueDate = x.DueDate,
+                    Priority = (int)x.Priority,
+                    Status = (int)x.Status
                 }).ToList();
 
             var todo = Map(tasks.Where(x => x.Status == Enum.TaskStatus.Todo));

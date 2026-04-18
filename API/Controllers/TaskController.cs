@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 using API.Service.TaskService;
 using Microsoft.AspNetCore.Authorization;
@@ -190,7 +190,7 @@ namespace API.Controllers
             }
             var userId = int.Parse(userIdClaim);
 
-            var result = await _updateStatus.UpdateStatusAsync(taskId, userId, request.status);
+            var result = await _updateStatus.UpdateStatusAsync(taskId, userId, request.Status);
             if (!result)
             {
                 return NotFound();
@@ -198,7 +198,8 @@ namespace API.Controllers
 
             return Ok(new
             {
-                Message = "Update Status succesfull"
+                Message = "Update Status succesfull",
+                Status = (int)request.Status
             });
         }
 
@@ -218,7 +219,7 @@ namespace API.Controllers
         }
 
         [HttpGet("{parentId}/subtasks")]
-        public async Task<IActionResult> GetSubTask(int parentId)
+        public async Task<IActionResult> GetSubTask(int parentId, int categoryId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -227,7 +228,7 @@ namespace API.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            var result = await _getSubTasks.Handle(parentId, userId);
+            var result = await _getSubTasks.Handle(parentId, userId, categoryId);
 
             return Ok(result);
         }

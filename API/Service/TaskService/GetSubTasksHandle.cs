@@ -12,9 +12,9 @@ namespace API.Service.TaskService
             _taskRepo = taskRepo;
         }
 
-        public async Task<List<SubTaskResponseDto>> Handle(int parentId, int userId)
+        public async Task<List<SubTaskResponseDto>> Handle(int parentId, int userId, int categoryId)
         {
-            var subTasks = await _taskRepo.GetSubTaskAsync(parentId, userId);
+            var subTasks = await _taskRepo.GetSubTaskAsync(parentId, userId, categoryId);
             if (!subTasks.Any())
             {
                 return new List<SubTaskResponseDto>();

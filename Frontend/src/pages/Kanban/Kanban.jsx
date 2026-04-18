@@ -1,22 +1,77 @@
-import React, { useState } from 'react';
-import { mockTasks } from '../../data/mockData';
-import { MoreHorizontal, Calendar, Clock, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import taskService from '../../services/taskService';
+import boardService from '../../services/boardService';
+import { Trash2, Calendar, Clock, CheckCircle2, ChevronRight, RefreshCw } from 'lucide-react';
 import './Kanban.css';
 
+const getPriorityLabel = (p) => {
+    switch(p) {
+        case 0: return 'Low';
+        case 1: return 'Medium';
+        case 2: return 'High';
+        default: return 'Low';
+    }
+}
+
 const Kanban = () => {
-  // Tạm thời lấy dữ liệu từ mockData
-  const [tasks] = useState(mockTasks);
+  const [tasks, setTasks] = useState([]); // Chúng ta vẫn giữ tasks phẳng để dễ quản lý update
+  const [loading, setLoading] = useState(true);
 
   // Định nghĩa các cột (Status)
   const columns = [
-    { id: 'Pending', title: 'Pending', color: '#f59e0b' },
-    { id: 'In Progress', title: 'In Progress', color: '#3b82f6' },
-    { id: 'Completed', title: 'Completed', color: '#10b981' }
+    { id: 0, title: 'Pending', color: '#f59e0b', cssClass: 'pending' },
+    { id: 1, title: 'In Progress', color: '#3b82f6', cssClass: 'in-progress' },
+    { id: 2, title: 'Completed', color: '#10b981', cssClass: 'completed' }
   ];
 
-  // Hàm lọc task theo trạng thái
-  const getTasksByStatus = (status) => {
-    return tasks.filter(task => task.status === status);
+  // --- FETCH DATA ---
+  const fetchBoard = async () => {
+      try {
+          setLoading(true);
+          const res = await boardService.getBoardData();
+          // Flatten data from todo, inProgress, completed into a single array
+          if (res) {
+              const allTasks = [
+                  ...(res.todo?.items || []),
+                  ...(res.inProgress?.items || []),
+                  ...(res.completed?.items || [])
+              ];
+              setTasks(allTasks);
+          }
+      } catch(err) {
+          console.error("Lỗi lấy dữ liệu Board:", err);
+      } finally {
+          setLoading(false);
+      }
+  }
+
+  useEffect(() => {
+    fetchBoard();
+  }, []);
+
+  const getTasksByStatus = (statusId) => {
+    return tasks.filter(task => task.status === statusId);
+  };
+
+  const handleUpdateStatus = async (task, newStatus) => {
+      try {
+          await taskService.updateStatus(task.taskId, newStatus);
+          setTasks(tasks.map(t => t.taskId === task.taskId ? { ...t, status: newStatus } : t));
+      } catch(err) {
+          console.error("Lỗi cập nhật trạng thái:", err);
+          alert("Lỗi: " + JSON.stringify(err.response?.data || err.message));
+      }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+      if(!window.confirm("Bạn có chắc chắn muốn xóa task này?")) return;
+      try {
+          await taskService.deleteTask(taskId);
+          setTasks(tasks.filter(t => t.taskId !== taskId));
+      } catch(err) {
+          console.error("Lỗi xóa task:", err);
+          alert("Lỗi: " + JSON.stringify(err.response?.data || err.message));
+      }
   };
 
   return (
@@ -24,43 +79,60 @@ const Kanban = () => {
       <header className="kanban-header">
         <div>
           <h1>Kanban Board</h1>
-          <p>Kéo thả để cập nhật trạng thái công việc (UI Preview).</p>
+          <p>Quản lý trạng thái công việc.</p>
         </div>
-        <button className="btn-primary-gradient">+ Add Task</button>
+        <button className="btn-icon-tiny" onClick={fetchBoard} title="Làm mới">
+          <RefreshCw size={20} />
+        </button>
       </header>
 
+      {loading ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Đang tải dữ liệu Kanban...</div>
+      ) : (
       <div className="kanban-board">
         {columns.map(col => (
           <div key={col.id} className="kanban-column">
-       <div className={`column-header ${col.id.toLowerCase().replace(' ', '-')}`}>
+            <div className={`column-header ${col.cssClass}`}>
               <h3>{col.title}</h3>
               <span className="task-count">{getTasksByStatus(col.id).length}</span>
             </div>
 
             <div className="column-content">
               {getTasksByStatus(col.id).map(task => (
-                <div key={task.id} className="kanban-card">
+                <div key={task.taskId} className="kanban-card">
                   <div className="card-header">
-                    <span className={`priority-badge ${task.priority}`}>
-                      {task.priority}
+                    <span className={`priority-badge ${getPriorityLabel(task.priority)}`}>
+                      {getPriorityLabel(task.priority)}
                     </span>
-                    <button className="btn-icon-small"><MoreHorizontal size={16} /></button>
+                    <button className="btn-icon-small text-red" title="Xóa" onClick={() => handleDeleteTask(task.taskId)}>
+                        <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  <h4 className="card-title">{task.title}</h4>
+                  <h4 className="card-title">{task.taskName}</h4>
                   <p className="card-desc">{task.description}</p>
 
-                  <div className="card-footer">
+                  <div className="card-footer" style={{ marginTop: '12px' }}>
                     <div className="deadline">
                       <Calendar size={14} />
-                      <span>{new Date(task.deadline).toLocaleDateString('vi-VN')}</span>
+                      <span>{task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'Không có hạn'}</span>
                     </div>
-                    {/* Icon hiển thị trạng thái hoàn thành nếu ở cột Completed */}
-                    {task.status === 'Completed' ? (
-                      <CheckCircle2 size={18} color="#10b981" />
-                    ) : (
-                      <Clock size={18} color="#94a3b8" />
-                    )}
+                    
+                    <div className="card-actions" style={{ display: 'flex', gap: '4px' }}>
+                        {task.status === 0 && (
+                            <button className="btn-icon-tiny" title="Chuyển sang In Progress" onClick={() => handleUpdateStatus(task, 1)}>
+                                <ChevronRight size={18} color="#3b82f6" />
+                            </button>
+                        )}
+                        {task.status === 1 && (
+                            <button className="btn-icon-tiny" title="Hoàn thành" onClick={() => handleUpdateStatus(task, 2)}>
+                                <CheckCircle2 size={18} color="#10b981" />
+                            </button>
+                        )}
+                        {task.status === 2 && (
+                            <CheckCircle2 size={18} color="#10b981" />
+                        )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -68,6 +140,7 @@ const Kanban = () => {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 };
