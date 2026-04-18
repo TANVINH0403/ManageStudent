@@ -130,7 +130,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="dashboard-content">
+    <div className="sales-dashboard-wrapper">
+
       {/* HEADER */}
       <header className="dashboard-header">
         <div className="header-text">
@@ -158,55 +159,105 @@ const Dashboard = () => {
           <div className="stat-value">{stats.total}</div>
         </div>
 
-        <div className={`stat-card orange ${activeFilter === 'Pending' ? 'active' : ''}`} onClick={() => handleFilterClick('Pending')}>
-          <div className="stat-header">
-            <span className="stat-title">Pending</span>
-            <Clock className="stat-icon" size={20} />
+        <div className="kpi-card">
+          <div className="kpi-info">
+            <span className="kpi-label">Giờ tập trung</span>
+            <span className="kpi-value">{focusHours}h</span>
+            <span className="kpi-change negative">▼ 6.11% <span className="kpi-compare">so với tháng trước</span></span>
+          </div>
+          <div className="kpi-chart">
+            <ResponsiveContainer width="100%" height="100%"><AreaChart data={sparklineUp}><Area type="monotone" dataKey="v" stroke="var(--sales-primary)" fill="var(--sales-primary-light)" fillOpacity={0.6} strokeWidth={2} /></AreaChart></ResponsiveContainer>
           </div>
           <div className="stat-value">{stats.pending}</div>
         </div>
+      </div>
 
-        <div className={`stat-card green ${activeFilter === 'Completed' ? 'active' : ''}`} onClick={() => handleFilterClick('Completed')}>
-          <div className="stat-header">
-            <span className="stat-title">Completed</span>
-            <CheckCircle2 className="stat-icon" size={20} />
+      {/* 3 BIỂU ĐỒ CHÍNH */}
+      <div className="charts-row-3">
+        <div className="chart-card">
+          <h3 className="chart-title">Tiến độ làm bài (Assigned vs Done)</h3>
+          <div className="chart-legend-custom">
+            {/* Sử dụng CSS Class thay vì inline style */}
+            <span><span className="dot bg-gray-dot"></span> Được giao</span>
+            <span><span className="dot bg-primary-dot"></span> Hoàn thành</span>
+          </div>
+          <div className="chart-wrapper-h200">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={taskProgressData}>
+                <XAxis dataKey="month" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{stroke: 'var(--sales-border)', strokeWidth: 1, strokeDasharray: '4 4'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                {/* Dùng thẳng biến CSS var(--tên_biến) */}
+                <Area type="monotone" dataKey="assigned" stackId="1" stroke="var(--sales-text-light)" fill="var(--sales-border)" fillOpacity={0.8} />
+                <Area type="monotone" dataKey="completed" stackId="1" stroke="var(--sales-primary)" fill="var(--sales-primary)" fillOpacity={0.6} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
           <div className="stat-value">{stats.completed}</div>
         </div>
 
-        <div className={`stat-card red ${activeFilter === 'Overdue' ? 'active' : ''}`} onClick={() => handleFilterClick('Overdue')}>
-          <div className="stat-header">
-            <span className="stat-title">Overdue</span>
-            <AlertTriangle className="stat-icon" size={20} />
+        <div className="chart-card">
+          <h3 className="chart-title">Hiệu suất & Trễ hạn hàng tuần</h3>
+          <div className="chart-legend-custom">
+            <span><span className="dot bg-gray-dot"></span> Trễ hạn</span>
+            <span><span className="dot bg-primary-dot"></span> Hoàn thành</span>
+            <span><span className="dot bg-dark-dot"></span> Điểm năng suất</span>
+          </div>
+          <div className="chart-wrapper-h200">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={performanceData}>
+                <XAxis dataKey="week" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" hide />
+                <YAxis yAxisId="right" orientation="right" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{fill: 'var(--sales-bg)'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                <Bar yAxisId="left" dataKey="overdue" stackId="a" fill="var(--sales-text-light)" barSize={24} fillOpacity={0.8} />
+                <Bar yAxisId="left" dataKey="done" stackId="a" fill="var(--sales-primary)" barSize={24} radius={[4, 4, 0, 0]} fillOpacity={0.8} />
+                <Line yAxisId="right" type="monotone" dataKey="score" stroke="var(--sales-text-main)" strokeWidth={2} dot={{r: 4, fill: 'var(--sales-text-main)'}} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="chart-card clickable-card" onClick={goToCategory}>
+          <div className="card-header-with-link">
+            <h3 className="chart-title">Khối lượng bài tập theo Phân loại</h3>
+            <ExternalLink size={14} color="var(--sales-text-light)" />
+          </div>
+          <div className="chart-legend-custom">
+            <span><span className="dot bg-primary-dot"></span> Chuyên ngành</span>
+            <span><span className="dot bg-gray-dot"></span> Đại cương</span>
+          </div>
+          <div className="chart-wrapper-h200">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={categoryData}>
+                <XAxis dataKey="month" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{fill: 'var(--sales-bg)'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
+                <Bar yAxisId="right" dataKey="major" stackId="a" fill="var(--sales-primary)" barSize={24} fillOpacity={0.8} />
+                <Bar yAxisId="right" dataKey="general" stackId="a" fill="var(--sales-text-light)" barSize={24} radius={[4, 4, 0, 0]} fillOpacity={0.8} />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
           <div className="stat-value">{stats.overdue}</div>
         </div>
       </div>
 
-      <div className="dashboard-lower-grid">
-        {/* CHART SECTION */}
-        <div className="chart-section dashboard-card">
-          <div className="card-header">
-              <h3>Task Analytics</h3>
-              <span className="subtitle">Thống kê theo trạng thái</span>
+      {/* DÒNG 3: BOTTOM SECTION */}
+      <div className="charts-row-bottom">
+        <div className="chart-card area-bottom">
+          <h3 className="chart-title">Phân bổ thời gian (Giờ học vs Giờ nghỉ)</h3>
+          <div className="chart-legend-custom">
+            <span><span className="dot bg-primary-dot"></span> Focus</span>
+            <span><span className="dot bg-gray-dot"></span> Break</span>
           </div>
-          <div className="chart-wrapper">
+          <div className="chart-wrapper-h250">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}/>
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40} onClick={(data) => handleFilterClick(data.id)} cursor="pointer">
-                  {chartData.map((entry, index) => (
-                    <Cell
-                        key={`cell-${index}`}
-                        fill={entry.color}
-                        opacity={activeFilter === 'All' || activeFilter === entry.id ? 1 : 0.3}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
+              <AreaChart data={categoryData}>
+                <XAxis dataKey="month" tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <YAxis tick={{fontSize: 10, fill: 'var(--sales-text-light)'}} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{stroke: 'var(--sales-border)', strokeWidth: 1, strokeDasharray: '4 4'}} />
+                <Area type="monotone" dataKey="general" stackId="1" stroke="var(--sales-text-light)" fill="var(--sales-border)" fillOpacity={0.8} />
+                <Area type="monotone" dataKey="major" stackId="1" stroke="var(--sales-primary)" fill="var(--sales-primary-light)" fillOpacity={0.6} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
