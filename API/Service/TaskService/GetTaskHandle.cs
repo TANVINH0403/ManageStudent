@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 using API.UnitOfWork;
 using System.Globalization;
@@ -20,6 +20,9 @@ namespace API.Service.TaskService
         {
             var  query = await  _taskRepo.GetQueryAsync(userId);
             
+            // Chỉ lấy các task cha (Root tasks) cho danh sách chính
+            query = query.Where(x => x.ParentId == null);
+
             //Filter
             if(request.Status != null)
             {

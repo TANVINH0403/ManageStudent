@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Cấu hình base URL (Sau này đổi thành localhost của .NET hoặc domain thật)
 const axiosClient = axios.create({
-  baseURL: 'https://localhost:7001/api', // Thay bằng port chạy Backend .NET của bạn
+  baseURL: 'https://localhost:7016/api', // Thay bằng port chạy Backend .NET của bạn
   headers: {
     'Content-Type': 'application/json',
   },

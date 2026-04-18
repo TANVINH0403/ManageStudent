@@ -1,9 +1,11 @@
-﻿using API.Enum;
+using API.Enum;
+using System.Text.Json.Serialization;
 
 namespace API.Dtos.Task
 {
     public class UpdateStatusDto
     {
-        public Enum.TaskStatus status {  get; set; }
+        [JsonPropertyName("status")]
+        public Enum.TaskStatus Status {  get; set; }
     }
 }

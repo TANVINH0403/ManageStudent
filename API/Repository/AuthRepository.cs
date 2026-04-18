@@ -29,5 +29,12 @@ namespace API.Repository
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
         }
+
+        public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+        {
+            return await _context.Users
+    .Where(x => x.RefreshToken == refreshToken)
+    .FirstOrDefaultAsync();
+        }
     }
 }

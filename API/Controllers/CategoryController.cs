@@ -1,4 +1,4 @@
-﻿using API.Dtos.Category;
+using API.Dtos.Category;
 using API.Service.CategoryService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -102,14 +102,20 @@ namespace API.Controllers
         public async Task<IActionResult> DeleteCategory(int categoryId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized();
 
             var userId = int.Parse(userIdClaim);
 
-            await _deleteCateHandle.CategoryDeleteAsync(categoryId, userId);
-            return NoContent();
+            try
+            {
+                await _deleteCateHandle.CategoryDeleteAsync(categoryId, userId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
 

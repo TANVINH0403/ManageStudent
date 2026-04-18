@@ -1,4 +1,4 @@
-﻿using API.Interfaces;
+using API.Interfaces;
 using API.UnitOfWork;
 
 namespace API.Service.TaskService
@@ -21,14 +21,11 @@ namespace API.Service.TaskService
                 throw new Exception("Task Not Found");
             }
 
-            if (task.ParentId == null)
+            // Luôn tìm và xóa subtasks một cách đệ quy để tránh lỗi Foreign Key Constraint
+            var allSubTasks = await GetAllSubTaskAsync(taskId, userId);
+            if (allSubTasks.Any())
             {
-                var allSubTasks = await GetAllSubTaskAsync(taskId, userId);
-
-                if (allSubTasks.Any())
-                {
-                    _taskRepo.DeleteRange(allSubTasks);
-                }
+                _taskRepo.DeleteRange(allSubTasks);
             }
 
 

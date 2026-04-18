@@ -9,6 +9,8 @@ namespace API.Entities
         public string PasswordHash { get; set; }
         public string Email { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
         public ICollection<Task> Tasks { get; set; }
         public ICollection<Tag> Tags { get; set; }
         public ICollection<Category> Categories { get; set; }

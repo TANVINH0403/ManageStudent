@@ -17,7 +17,7 @@ namespace API.Service.AuthService
          
         }
 
-        public string GenerateToken(User user)
+        public (string Token, DateTime Expiry) GenerateToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_config["Jwt:Secret"]);
@@ -27,7 +27,7 @@ namespace API.Service.AuthService
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim("userId", user.UserId.ToString()),
+                //new Claim("userId", user.UserId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -51,8 +51,15 @@ namespace API.Service.AuthService
             };
 
             var token = jwtTokenHandler.CreateToken(tokenDescription);
-            return jwtTokenHandler.WriteToken(token);
+            return (jwtTokenHandler.WriteToken(token), expires);
         }
 
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
     }
 }

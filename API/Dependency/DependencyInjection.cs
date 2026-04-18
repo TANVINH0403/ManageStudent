@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
@@ -7,6 +7,7 @@ using API.Service.DashboardService;
 using API.Service.FileService;
 using API.Service.TagService;
 using API.Service.TaskService;
+using API.Service.UserService;
 using API.UnitOfWork;
 using API.Validator;
 using Microsoft.AspNetCore.Identity;
@@ -69,6 +70,14 @@ namespace API.Dependency
             services.AddScoped<GetFileHandler>();
             services.AddScoped<DeleteFileHandler>();
 
+
+            //User
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<GetProfileService>();
+            services.AddScoped<UpdateProfileService>();
+            services.AddScoped<ChangePasswordService>();
+
+
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
@@ -81,17 +90,7 @@ namespace API.Dependency
                 });
             });
 
-            services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    options.JsonSerializerOptions.Converters
-                    .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                });
-
-            services.AddControllers()
-                .AddJsonOptions(options => {
-                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                });
+            return services;
 
             return services;
         }

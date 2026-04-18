@@ -1,4 +1,4 @@
-﻿using API.Data;
+using API.Data;
 using API.Dtos.Task;
 using API.Entities;
 using API.Enum;
@@ -32,10 +32,7 @@ namespace API.Repository
         {
             return await _context.Tasks
                 .Include(t => t.Category)
-                .Where(t =>
-                    t.UserId == userId ||
-                    (t.Category != null && t.Category.Visibility == Visibility.Public)
-                 )
+                .Where(t => t.UserId == userId)
                 .ToListAsync();
         }
 
@@ -51,19 +48,14 @@ namespace API.Repository
                 .Include(x => x.TaskTags)
                     .ThenInclude(xx => xx.Tag)
                 .Include(t => t.Category)
-                .FirstOrDefaultAsync(t =>
-                t.TaskId == taskId && (t.UserId == userId ||
-                (t.Category != null && t.Category.Visibility == Visibility.Public))
-                );
+                .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
         }
 
         public async Task<Entities.Task?> GetParentTaskAsync(int parentId, int userId)
         {
             return await _context.Tasks
                 .Include(t => t.Category)
-                .FirstOrDefaultAsync(t => t.TaskId == parentId && (
-                t.UserId == userId ||
-                (t.Category != null && t.Category.Visibility == Visibility.Public)));
+                .FirstOrDefaultAsync(t => t.TaskId == parentId && t.UserId == userId);
         }
 
         public async Task<IQueryable<Entities.Task>> GetQueryAsync(int userId)
@@ -72,34 +64,22 @@ namespace API.Repository
                 .Include(x => x.Category)
                 .Include(x => x.TaskTags)
                 .ThenInclude(xx => xx.Tag)
-                .Where(t => t.UserId == userId ||
-                (t.Category != null && t.Category.Visibility == Visibility.Public
-                )).AsQueryable();
+                .Where(t => t.UserId == userId)
+                .AsQueryable();
         }
 
         public async Task<List<Entities.Task>> DeleteSubTasksAsync(int parentId, int userId)
         {
             return await _context.Tasks
                 .Include(t => t.Category)
-                .Where(t =>
-                    t.ParentId == parentId &&
-                    (
-                        t.UserId == userId ||
-                        (t.Category != null && t.Category.Visibility == Visibility.Public)
-                    )
-                )
+                .Where(t => t.ParentId == parentId && t.UserId == userId)
                 .ToListAsync();
         }
 
         public async Task<List<Entities.Task>> GetRootTasksAsync(int categoryId, int userId)
         {
             return await _context.Tasks
-                .Where(t => t.CategoryId == categoryId &&
-                    t.ParentId == null &&
-                   (t.UserId == userId ||
-                     (t.Category != null && t.Category.Visibility == Visibility.Public)
-                  )
-                )
+                .Where(t => t.CategoryId == categoryId && t.ParentId == null && t.UserId == userId)
                 .ToListAsync();
         }
 
@@ -133,11 +113,10 @@ namespace API.Repository
             return _context.SaveChangesAsync();
         }
 
-        public async Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId)
+        public async Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId, int categoryId)
         {
             return await _context.Tasks
-                .Where(t => t.ParentId == parentId &&
-                (t.UserId == userId || (t.Category != null && t.Category.Visibility == Visibility.Public)))
+                .Where(t => t.ParentId == parentId && t.UserId == userId && t.CategoryId == categoryId)
                 .ToListAsync();
         }
     }

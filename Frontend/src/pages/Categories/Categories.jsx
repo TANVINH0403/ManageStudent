@@ -1,32 +1,55 @@
-import React, { useState } from 'react';
-import { mockTasks } from '../../data/mockData'; // Import mock data task
+import React, { useState, useEffect } from 'react';
+import categoryService from '../../services/categoryService';
+import taskService from '../../services/taskService';
 import { FolderKanban, Edit2, Trash2, AlertCircle, Check, X, PlusCircle, Circle, CheckCircle2 } from 'lucide-react';
 import './Categories.css';
 
 const Categories = () => {
-  // Dữ liệu danh mục
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Đồ án chuyên ngành', color: '#3b82f6', taskCount: 2 },
-    { id: 2, name: 'Bài tập về nhà', color: '#f59e0b', taskCount: 1 },
-    { id: 3, name: 'Việc làm thêm', color: '#10b981', taskCount: 0 },
-    { id: 4, name: 'Sinh hoạt cá nhân', color: '#8b5cf6', taskCount: 0 },
-  ]);
-
-  // Dữ liệu Task cục bộ (để mô phỏng việc tạo thêm task mới)
-  const [localTasks, setLocalTasks] = useState(mockTasks);
+  const [categories, setCategories] = useState([]);
+  const [localTasks, setLocalTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const presetColors = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'];
 
   const [formData, setFormData] = useState({ id: null, name: '', color: presetColors[0] });
   const [isEditing, setIsEditing] = useState(false);
 
-  // STATE MỚI: Quản lý danh mục đang được mở chi tiết
   const [activeCategory, setActiveCategory] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
+  const fetchCategoriesAndTasks = async () => {
+      try {
+          setLoading(true);
+          const [catRes, taskRes] = await Promise.all([
+              categoryService.getAllCategories(),
+              taskService.getTasks({ PageSize: 100 })
+          ]);
+          
+          let fetchedTasks = taskRes?.data || [];
+          setLocalTasks(fetchedTasks);
+
+          if (Array.isArray(catRes)) {
+              setCategories(catRes.map(c => ({
+                  id: c.categoryId,
+                  name: c.categoryName,
+                  color: presetColors[c.categoryId % presetColors.length],
+                  taskCount: fetchedTasks.filter(t => t.categoryId === c.categoryId).length
+              })));
+          }
+      } catch(err) {
+          console.error("Error loading categories", err);
+      } finally {
+          setLoading(false);
+      }
+  }
+
+  useEffect(() => {
+    fetchCategoriesAndTasks();
+  }, []);
+
   // --- LOGIC CRUD DANH MỤC ---
   const handleEdit = (e, cat) => {
-    e.stopPropagation(); // Ngăn click lan ra thẻ card
+    e.stopPropagation();
     setIsEditing(true);
     setFormData({ id: cat.id, name: cat.name, color: cat.color });
   };
@@ -36,24 +59,45 @@ const Categories = () => {
     setFormData({ id: null, name: '', color: presetColors[0] });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    if (isEditing) {
-      setCategories(categories.map(c => c.id === formData.id ? { ...c, name: formData.name, color: formData.color } : c));
-    } else {
-      setCategories([...categories, { id: Date.now(), name: formData.name, color: formData.color, taskCount: 0 }]);
+    try {
+        if (isEditing) {
+            await categoryService.updateCategory(formData.id, { CategoryName: formData.name });
+            setCategories(categories.map(c => c.id === formData.id ? { ...c, name: formData.name, color: formData.color } : c));
+        } else {
+            const result = await categoryService.createCategory({ CategoryName: formData.name });
+            // API returns { categoryId, categoryName }
+            if (result && result.categoryId) {
+                setCategories([...categories, { 
+                    id: result.categoryId, 
+                    name: result.categoryName, 
+                    color: formData.color, 
+                    taskCount: 0 
+                }]);
+            } else {
+               await fetchCategoriesAndTasks();
+            }
+        }
+        handleCancel();
+    } catch (err) {
+        console.error("Lỗi khi lưu danh mục", err);
     }
-    handleCancel();
   };
 
-  const handleDelete = (e, id) => {
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
-    setCategories(categories.filter(c => c.id !== id));
+    try {
+        await categoryService.deleteCategory(id);
+        setCategories(categories.filter(c => c.id !== id));
+    } catch(err) {
+        console.error("Xóa thất bại", err);
+    }
   };
 
-  // --- LOGIC CHI TIẾT DANH MỤC (WOW FACTOR) ---
+  // --- LOGIC CHI TIẾT DANH MỤC ---
   const openCategoryDetail = (cat) => {
     setActiveCategory(cat);
   };
@@ -63,34 +107,48 @@ const Categories = () => {
     setNewTaskTitle('');
   };
 
-  // Tạo task nhanh bằng cách bấm Enter
-  const handleQuickAddTask = (e) => {
+  // Tạo task nhanh
+  const handleQuickAddTask = async (e) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
-      const newTask = {
-        id: Date.now(),
-        title: newTaskTitle,
-        description: 'Được tạo nhanh từ danh mục',
-        categoryId: activeCategory.id,
-        status: 'Pending',
-        priority: 'Medium',
-        deadline: new Date().toISOString()
-      };
-
-      // 1. Thêm task vào danh sách
-      setLocalTasks([newTask, ...localTasks]);
-      setNewTaskTitle('');
-
-      // 2. Cập nhật số đếm task của danh mục đó lên 1
-      setCategories(categories.map(c =>
-        c.id === activeCategory.id ? { ...c, taskCount: c.taskCount + 1 } : c
-      ));
+      try {
+          const newTaskRequest = {
+            TaskName: newTaskTitle,
+            Description: 'Được tạo nhanh từ danh mục',
+            CategoryId: activeCategory.id,
+            Priority: 1, // Medium
+            DueDate: new Date(new Date().setHours(23, 59, 59, 999)).toISOString()
+          };
+          
+          const result = await taskService.createTask(newTaskRequest);
+          
+          if(result) {
+              // Update local state temporarily to avoid full reload
+              const addedTask = {
+                  taskId: result.taskId || Date.now(),
+                  taskName: result.taskName || newTaskTitle,
+                  categoryId: activeCategory.id,
+                  status: result.status || 0,
+                  priority: 1
+              };
+              setLocalTasks([addedTask, ...localTasks]);
+              setCategories(categories.map(c =>
+                c.id === activeCategory.id ? { ...c, taskCount: c.taskCount + 1 } : c
+              ));
+              setNewTaskTitle('');
+          }
+      } catch (err) {
+          console.error("Failed to add task", err);
+      }
     }
   };
 
-  // Lấy các task thuộc danh mục đang mở
   const currentCategoryTasks = activeCategory
     ? localTasks.filter(t => t.categoryId === activeCategory.id)
     : [];
+
+  if (loading) {
+      return <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Đang tải danh mục...</div>;
+  }
 
   return (
     <div className="categories-page">
@@ -102,7 +160,6 @@ const Categories = () => {
       </div>
 
       <div className="categories-layout">
-        {/* PANEL TRÁI: FORM */}
         <div className="form-panel">
           <div className="form-header">
             <FolderKanban size={20} color="#3b82f6" />
@@ -141,7 +198,6 @@ const Categories = () => {
           </form>
         </div>
 
-        {/* PANEL PHẢI: DANH SÁCH */}
         <div className="list-panel">
           <div className="list-header">
             <h3>Danh sách hiện tại ({categories.length})</h3>
@@ -170,7 +226,7 @@ const Categories = () => {
                         <Trash2 size={16} />
                       </button>
                       <span className="tooltip-text">
-                        <AlertCircle size={12} style={{marginRight: '4px'}}/> Đang chứa task, không thể xóa
+                        <AlertCircle size={12} style={{marginRight: '4px'}}/> Đang chứa task
                       </span>
                     </div>
                   ) : (
@@ -185,7 +241,6 @@ const Categories = () => {
         </div>
       </div>
 
-      {/* --- WOW FACTOR: OVERLAY & NGĂN KÉO CHI TIẾT --- */}
       {activeCategory && <div className="overlay" onClick={closeCategoryDetail}></div>}
 
       <div className={`category-detail-panel ${activeCategory ? 'open' : ''}`}>
@@ -200,7 +255,6 @@ const Categories = () => {
             </div>
 
             <div className="panel-content">
-              {/* Ô TẠO TASK SIÊU TỐC */}
               <div className="quick-add-task">
                 <PlusCircle size={18} color={activeCategory.color} />
                 <input
@@ -213,19 +267,18 @@ const Categories = () => {
                 />
               </div>
 
-              {/* DANH SÁCH TASK TRONG DANH MỤC */}
               <div className="cat-task-list">
                 <h4 className="list-title">Công việc ({currentCategoryTasks.length})</h4>
                 {currentCategoryTasks.length > 0 ? (
                   currentCategoryTasks.map(task => (
-                    <div key={task.id} className="cat-task-item">
-                      {task.status === 'Completed' ? (
+                    <div key={task.taskId} className="cat-task-item">
+                      {task.status === 2 ? (
                         <CheckCircle2 size={18} color="#10b981" className="task-icon"/>
                       ) : (
                         <Circle size={18} color="#cbd5e1" className="task-icon"/>
                       )}
-                      <span className={`task-name ${task.status === 'Completed' ? 'completed' : ''}`}>
-                        {task.title}
+                      <span className={`task-name ${task.status === 2 ? 'completed' : ''}`}>
+                        {task.taskName}
                       </span>
                     </div>
                   ))

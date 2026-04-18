@@ -1,101 +1,197 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import './Login.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, User } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import './auth.css';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null); // { type: 'error'|'success', message }
 
-  // State quản lý dữ liệu form để sau này gửi API
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    userName: '',
+    password: '',
   });
 
+  const [errors, setErrors] = useState({});
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Xóa lỗi khi người dùng bắt đầu gõ lại
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (alert) setAlert(null);
   };
 
-  const handleLogin = async (e) => {
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.userName.trim()) newErrors.userName = 'Vui lòng nhập tên đăng nhập.';
+    if (!formData.password)        newErrors.password = 'Vui lòng nhập mật khẩu.';
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setLoading(true);
+    setAlert(null);
 
-    // MÔ PHỎNG GỌI API (Sau này thay bằng axiosClient.post('/login', formData))
-    console.log("Dữ liệu gửi lên Backend:", formData);
-
-    setTimeout(() => {
+    try {
+      await login(formData.userName, formData.password);
+      setAlert({ type: 'success', message: 'Đăng nhập thành công! Đang chuyển trang...' });
+      setTimeout(() => navigate('/'), 1000);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.Message ||
+        err?.message ||
+        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      setAlert({ type: 'error', message: msg });
+    } finally {
       setLoading(false);
-      alert("Giả lập: Đăng nhập thành công! (Chờ tích hợp Backend)");
-      // window.location.href = '/'; // Chuyển hướng sau khi login
-    }, 1500);
+    }
   };
 
   return (
-    <div className="login-container">
-      {/* Background trang trí giống thiết kế */}
-      <div className="bg-shape shape-1"></div>
-      <div className="bg-shape shape-2"></div>
-      <div className="bg-shape shape-3"></div>
+    <div className="auth-container">
+      {/* Animated blobs */}
+      <div className="auth-blob auth-blob-1" />
+      <div className="auth-blob auth-blob-2" />
+      <div className="auth-blob auth-blob-3" />
 
-      <div className="login-card">
-        <div className="login-header">
-          <h2>Login</h2>
-          <p>Điền thông tin tài khoản để tiếp tục.</p>
+      {/* Branding (desktop left panel) */}
+      <div className="auth-branding">
+        <div className="auth-branding-content">
+          <div className="auth-logo">
+            <div className="auth-logo-icon">🎓</div>
+            <span className="auth-logo-text">ManagerStudent</span>
+          </div>
+          <h1>Quản lý sinh viên thông minh</h1>
+          <p>Nền tảng theo dõi tiến độ, nhiệm vụ và lịch học dành cho sinh viên hiện đại.</p>
+          <ul className="auth-features">
+            <li className="auth-feature-item">
+              <span className="auth-feature-icon">📋</span>
+              Quản lý nhiệm vụ theo thời gian thực
+            </li>
+            <li className="auth-feature-item">
+              <span className="auth-feature-icon">📊</span>
+              Dashboard thống kê trực quan
+            </li>
+            <li className="auth-feature-item">
+              <span className="auth-feature-icon">🗓️</span>
+              Lịch học & nhắc nhở thông minh
+            </li>
+            <li className="auth-feature-item">
+              <span className="auth-feature-icon">🔒</span>
+              Bảo mật dữ liệu tốt nhất
+            </li>
+          </ul>
         </div>
+      </div>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="input-group">
-            <label>Email</label>
-            <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
-              <input
-                type="email"
-                name="email"
-                placeholder="Nhập email của bạn"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+      {/* Form panel */}
+      <div className="auth-form-panel">
+        <div className="auth-card">
+          <div className="auth-card-header">
+            <h2>Chào mừng trở lại 👋</h2>
+            <p>Đăng nhập để tiếp tục hành trình học tập của bạn</p>
+          </div>
+
+          {/* Alert */}
+          {alert && (
+            <div className={`auth-alert auth-alert-${alert.type}`}>
+              {alert.type === 'error'
+                ? <AlertCircle size={18} />
+                : <CheckCircle2 size={18} />
+              }
+              {alert.message}
             </div>
-          </div>
+          )}
 
-          <div className="input-group">
-            <label>Password</label>
-            <div className="input-wrapper">
-              <Lock className="input-icon" size={20} />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Nhập mật khẩu"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="button"
-                className="btn-toggle-pass"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+          <form onSubmit={handleSubmit} noValidate>
+            {/* Username */}
+            <div className="auth-input-group">
+              <label htmlFor="login-username">Tên đăng nhập</label>
+              <div className="auth-input-wrapper">
+                <User className="auth-input-icon" size={18} />
+                <input
+                  id="login-username"
+                  type="text"
+                  name="userName"
+                  placeholder="Nhập tên đăng nhập"
+                  value={formData.userName}
+                  onChange={handleChange}
+                  className={errors.userName ? 'input-error' : ''}
+                  autoComplete="username"
+                />
+              </div>
+              {errors.userName && (
+                <p className="auth-field-error">
+                  <AlertCircle size={13} /> {errors.userName}
+                </p>
+              )}
             </div>
-          </div>
 
-          <div className="form-options">
-            <label className="remember-me">
-              <input type="checkbox" /> Remember me
-            </label>
-            <a href="#" className="forgot-pass">Forgot Password?</a>
-          </div>
+            {/* Password */}
+            <div className="auth-input-group">
+              <label htmlFor="login-password">Mật khẩu</label>
+              <div className="auth-input-wrapper">
+                <Lock className="auth-input-icon" size={18} />
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  placeholder="Nhập mật khẩu"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={errors.password ? 'input-error' : ''}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="btn-toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="auth-field-error">
+                  <AlertCircle size={13} /> {errors.password}
+                </p>
+              )}
+            </div>
 
-          <button type="submit" className="btn-login" disabled={loading}>
-            {loading ? "Đang xử lý..." : "Login"}
-          </button>
-        </form>
+            {/* Remember & Forgot */}
+            <div className="auth-form-options">
+              <label className="auth-remember-me">
+                <input type="checkbox" /> Ghi nhớ đăng nhập
+              </label>
+              <a href="#" className="auth-forgot-link">Quên mật khẩu?</a>
+            </div>
 
-        <p className="register-link">
-          Chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
-        </p>
+            {/* Submit */}
+            <button type="submit" className="auth-btn-submit" disabled={loading}>
+              {loading && <span className="btn-spinner" />}
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </button>
+          </form>
+
+          <p className="auth-bottom-link">
+            Chưa có tài khoản?{' '}
+            <Link to="/register">Đăng ký ngay</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

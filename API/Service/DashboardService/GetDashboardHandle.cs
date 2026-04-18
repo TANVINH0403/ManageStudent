@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 using API.Repository;
 using API.UnitOfWork;
@@ -22,7 +22,7 @@ namespace API.Service.DashboardService
             var now = DateTime.UtcNow;
             var last7Days = now.AddDays(-7);
 
-            var taskQuery = _taskRepo.GetTasksByUser(userId);
+            var taskQuery = await _taskRepo.GetQueryAsync(userId);
 
             //  STATUS OVERVIEW
             var status = await taskQuery
