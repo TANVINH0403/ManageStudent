@@ -35,6 +35,11 @@ namespace API.Service.CategoryService
                 category.CategoryName = request.CategoryName.Trim();
             }
 
+            if (request.Description != null) category.Description = request.Description;
+            if (request.Priority >= 0) category.Priority = request.Priority;
+            if (request.Status >= 0) category.Status = request.Status;
+            if (request.EndDate != null) category.EndDate = request.EndDate;
+
             await _uow.SaveChangesAsync();
 
         }

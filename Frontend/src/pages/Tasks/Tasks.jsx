@@ -2,8 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   Search,
+  Filter,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  MoreVertical,
   X,
   Trash2,
   Calendar,
@@ -12,8 +15,14 @@ import {
   CheckSquare,
   AlignLeft,
   Subtitles,
-  Download
+  Download,
+  AlertCircle,
+  CheckCircle2,
+  Circle,
+  FolderKanban,
+  Edit2
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 import taskService from '../../services/taskService';
 import categoryService from '../../services/categoryService';
@@ -21,6 +30,7 @@ import './Tasks.css';
 
 const Tasks = () => {
   // --- CORE STATE ---
+  const location = useLocation();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -28,29 +38,69 @@ const Tasks = () => {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
   const [newSubtaskName, setNewSubtaskName] = useState('');
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [groupBy, setGroupBy] = useState('category'); // 'category' or 'status'
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [subtaskDisplayMode, setSubtaskDisplayMode] = useState('nested'); // 'nested', 'expanded', 'hidden'
+  const [selectedTaskIds, setSelectedTaskIds] = useState(new Set());
+
+  // Listen for navigation state (from Categories or Dashboard)
+  useEffect(() => {
+    // Filter by Category
+    if (location.state?.filterCategoryId) {
+      setCategoryFilter(location.state.filterCategoryId.toString());
+    }
+
+    // Open specific Task detail (from Dashboard)
+    if (location.state?.openTaskId && tasks.length > 0) {
+      const taskToOpen = tasks.find(t => t.taskId == location.state.openTaskId);
+      if (taskToOpen) setActiveTask(taskToOpen);
+    }
+
+    // Clean up state
+    if (location.state) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, tasks]);
+
+
   const [activeTask, setActiveTask] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTaskData, setNewTaskData] = useState({
     taskName: '',
-    categoryId: '',
+    categoryId: location.state?.categoryId || '',
     priority: 1,
     description: ''
   });
 
+  // Sync newTaskData category with filter if filter is active
+  useEffect(() => {
+    if (categoryFilter !== 'all') {
+      setNewTaskData(prev => ({ ...prev, categoryId: categoryFilter }));
+    }
+  }, [categoryFilter]);
+
   // --- DATA NORMALIZATION ---
+  const toggleGroup = (groupId) => {
+    const newCollapsed = new Set(collapsedGroups);
+    if (newCollapsed.has(groupId)) newCollapsed.delete(groupId);
+    else newCollapsed.add(groupId);
+    setCollapsedGroups(newCollapsed);
+  };
+
   const mapStatus = (statusValue) => {
     if (statusValue === undefined || statusValue === null || statusValue === '') return 0;
     if (typeof statusValue === 'number') return statusValue;
     if (typeof statusValue === 'string') {
-        const lower = statusValue.toLowerCase().trim();
-        if (lower === 'todo' || lower === 'pending' || lower === '0') return 0;
-        if (lower === 'inprogress' || lower === 'in_progress' || lower === '1') return 1;
-        if (lower === 'completed' || lower === 'done' || lower === '2') return 2;
-        const parsed = parseInt(statusValue);
-        return isNaN(parsed) ? 0 : parsed;
+      const lower = statusValue.toLowerCase().trim();
+      if (lower === 'todo' || lower === 'pending' || lower === '0') return 0;
+      if (lower === 'inprogress' || lower === 'in_progress' || lower === '1') return 1;
+      if (lower === 'completed' || lower === 'done' || lower === '2') return 2;
+      const parsed = parseInt(statusValue);
+      return isNaN(parsed) ? 0 : parsed;
     }
     return 0;
   };
@@ -65,35 +115,77 @@ const Tasks = () => {
       priority: (t.priority !== undefined && t.priority !== null) ? t.priority : (t.Priority ?? 1),
       categoryId: t.categoryId ?? t.CategoryId,
       dueDate: t.dueDate ?? t.DueDate,
-      parentId: (t.parentId !== undefined && t.parentId !== null) ? t.parentId : (t.ParentId ?? null)
+      parentId: (t.parentId !== undefined && t.parentId !== null) ? t.parentId : (t.ParentId ?? null),
+      hasSubtasks: t.hasSubtasks ?? t.HasSubtasks ?? t.hasChildren ?? t.HasChildren ?? false,
     };
   };
 
   // --- API OPERATIONS ---
-  const fetchData = async () => {
+  const toggleSelectTask = (taskId) => {
+    const newSelected = new Set(selectedTaskIds);
+    if (newSelected.has(taskId.toString())) newSelected.delete(taskId.toString());
+    else newSelected.add(taskId.toString());
+    setSelectedTaskIds(newSelected);
+  };
+
+  const selectAllInGroup = (groupTasks) => {
+    const newSelected = new Set(selectedTaskIds);
+    const someUnselected = groupTasks.some(t => !newSelected.has(t.taskId.toString()));
+    groupTasks.forEach(t => {
+      if (someUnselected) newSelected.add(t.taskId.toString());
+      else newSelected.delete(t.taskId.toString());
+    });
+    setSelectedTaskIds(newSelected);
+  };
+
+  const handleBulkAction = async (action, value) => {
+    // Update frontend state immediately for all selected
+    const updatedTasks = tasks.map(t => {
+      if (selectedTaskIds.has(t.taskId.toString())) {
+        return { ...t, [action]: value };
+      }
+      return t;
+    });
+    setTasks(updatedTasks);
+
+    // In a real app, call a bulk API here
+    // alert(`Bulk Updated ${selectedTaskIds.size} tasks: ${action} = ${value}`);
+
+    // Clear selection after action
+    setSelectedTaskIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selectedTaskIds.size} tasks?`)) return;
+    const filterIds = Array.from(selectedTaskIds);
+    setTasks(tasks.filter(t => !selectedTaskIds.has(t.taskId.toString())));
+    setSelectedTaskIds(new Set());
+  };
+
+  const fetchTasks = async () => {
     try {
       setLoading(true);
       // Fetch a larger set to ensure we see newly created subtasks in the main list
       const [taskRes, catRes] = await Promise.all([
-        taskService.getTasks({ PageSize: 500 }), 
+        taskService.getTasks({ PageSize: 500 }),
         categoryService.getAllCategories()
       ]);
-      
+
       if (taskRes) {
         let rawTasks = [];
         if (Array.isArray(taskRes)) rawTasks = taskRes;
         else if (taskRes.data && Array.isArray(taskRes.data)) rawTasks = taskRes.data;
         else if (taskRes.result && Array.isArray(taskRes.result)) rawTasks = taskRes.result;
         else if (taskRes.items && Array.isArray(taskRes.items)) rawTasks = taskRes.items;
-        
+
         const allNormalized = rawTasks.map(normalizeTask);
-        
+
         // Root tasks: tasks that strictly have no parent
         const roots = allNormalized.filter(t => t.parentId === null || t.parentId === undefined);
-        
+
         // Subtasks: tasks that have pointers to a parent
         const subs = allNormalized.filter(t => t.parentId !== null && t.parentId !== undefined);
-        
+
         // PROACTIVE RECOVERY: Rebuild the subtasks map from the general list
         const recoveredSubMap = {};
         subs.forEach(s => {
@@ -101,11 +193,18 @@ const Tasks = () => {
           if (!recoveredSubMap[pid]) recoveredSubMap[pid] = [];
           recoveredSubMap[pid].push(s);
         });
-        
+
         setTasks(roots);
-        setSubtasksMap(recoveredSubMap);
+        // MERGE instead of REPLACE to preserve lazy-loaded subtasks
+        setSubtasksMap(prev => {
+          const merged = { ...prev };
+          Object.keys(recoveredSubMap).forEach(pid => {
+            merged[pid] = recoveredSubMap[pid];
+          });
+          return merged;
+        });
       }
-      
+
       if (catRes) {
         if (Array.isArray(catRes)) setCategories(catRes);
         else if (catRes.data && Array.isArray(catRes.data)) setCategories(catRes.data);
@@ -117,17 +216,17 @@ const Tasks = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchTasks(); }, []);
 
   const toggleSubtasks = async (parentId) => {
     const parentIdStr = parentId.toString();
     const newExpanded = new Set(expandedTasks);
-    
+
     if (newExpanded.has(parentIdStr)) {
       newExpanded.delete(parentIdStr);
     } else {
       newExpanded.add(parentIdStr);
-      
+
       // Data is usually now pre-populated, but we check if we need an extra API hit
       if (!subtasksMap[parentIdStr] || subtasksMap[parentIdStr].length === 0) {
         try {
@@ -139,10 +238,17 @@ const Tasks = () => {
             else if (res.result && Array.isArray(res.result)) rawSubtasks = res.result;
             else if (res.items && Array.isArray(res.items)) rawSubtasks = res.items;
           }
-          
+
           if (rawSubtasks.length > 0) {
-            const normalized = rawSubtasks.map(normalizeTask);
+            const normalized = rawSubtasks.map(s => {
+              const nt = normalizeTask(s);
+              if (!nt.parentId) nt.parentId = parentId;
+              return nt;
+            });
             setSubtasksMap(prev => ({ ...prev, [parentIdStr]: normalized }));
+          } else {
+            // Set to empty array to indicate we've checked and it's empty
+            setSubtasksMap(prev => ({ ...prev, [parentIdStr]: [] }));
           }
         } catch (err) {
           console.error("Get Subtasks Error:", err);
@@ -152,36 +258,94 @@ const Tasks = () => {
     setExpandedTasks(newExpanded);
   };
 
+  const expandAllSubtasks = async () => {
+    const rootsWithSubs = tasks.filter(t => t.hasSubtasks);
+    const newExpanded = new Set(expandedTasks);
+
+    // Proactively expand all roots with subs
+    rootsWithSubs.forEach(t => newExpanded.add(t.taskId.toString()));
+    setExpandedTasks(newExpanded);
+
+    // Fetch subtasks for any that aren't already loaded
+    for (const task of rootsWithSubs) {
+      const pidStr = task.taskId.toString();
+      if (!subtasksMap[pidStr] || subtasksMap[pidStr].length === 0) {
+        try {
+          const res = await taskService.getSubTasks(task.taskId);
+          let raw = [];
+          if (Array.isArray(res)) raw = res;
+          else if (res.data && Array.isArray(res.data)) raw = res.data;
+          else if (res.result && Array.isArray(res.result)) raw = res.result;
+
+          const normalized = raw.map(s => {
+            const nt = normalizeTask(s);
+            if (!nt.parentId) nt.parentId = task.taskId;
+            return nt;
+          });
+
+          setSubtasksMap(prev => ({ ...prev, [pidStr]: normalized }));
+        } catch (err) {
+          console.error("Expand All Fetch Error:", err);
+        }
+      }
+    }
+  };
+
+  const collapseAllSubtasks = () => {
+    setExpandedTasks(new Set());
+  };
+
   const handleQuickUpdate = async (e, task, field, value) => {
     if (e) e.stopPropagation();
     try {
       const intValue = parseInt(value);
+      if (isNaN(intValue)) return;
+
+      console.log(`[QuickUpdate] Task ${task.taskId} | Field: ${field} | Value: ${value}`);
+
       const updatedTaskData = { ...task, [field]: intValue };
 
       // Optimistic state update
-      if (task.parentId !== null && task.parentId !== undefined) {
-          const pid = task.parentId;
-          setSubtasksMap(prev => ({
-              ...prev,
-              [pid]: (prev[pid] || []).map(s => s.taskId === task.taskId ? updatedTaskData : s)
-          }));
+      let foundInRoot = tasks.some(t => t.taskId == task.taskId);
+      let foundInSubs = false;
+      let parentIdStr = null;
+
+      if (task.parentId) {
+        parentIdStr = task.parentId.toString();
+        if (subtasksMap[parentIdStr]?.some(s => s.taskId == task.taskId)) {
+          foundInSubs = true;
+        }
+      }
+
+      if (foundInSubs) {
+        console.log(`[QuickUpdate] Updating subtask in map for parent: ${parentIdStr}`);
+        setSubtasksMap(prev => ({
+          ...prev,
+          [parentIdStr]: (prev[parentIdStr] || []).map(s => s.taskId == task.taskId ? updatedTaskData : s)
+        }));
+      } else if (foundInRoot) {
+        console.log(`[QuickUpdate] Updating root task`);
+        setTasks(prev => prev.map(t => t.taskId == task.taskId ? updatedTaskData : t));
       } else {
-          setTasks(prev => prev.map(t => t.taskId === task.taskId ? updatedTaskData : t));
+        console.warn(`[QuickUpdate] WARNING: Task ${task.taskId} not found in state. Re-fetching...`);
+        fetchTasks();
       }
 
       // API persistence
       if (field === 'status') {
-        await taskService.updateStatus(task.taskId, intValue);
+        const res = await taskService.updateStatus(task.taskId, intValue);
+        console.log("[QuickUpdate] API Status OK:", res);
       } else {
-        await taskService.updateTask(task.taskId, { Priority: intValue });
+        const res = await taskService.updateTask(task.taskId, { Priority: intValue });
+        console.log("[QuickUpdate] API Priority OK:", res);
       }
 
-      if (activeTask && activeTask.taskId === task.taskId) {
+      if (activeTask && activeTask.taskId == task.taskId) {
         setActiveTask(prev => ({ ...prev, [field]: intValue }));
       }
     } catch (err) {
-      console.error("Quick Update Error:", err);
-      fetchData(); // Rollback on error
+      console.error("[QuickUpdate] ERROR:", err);
+      fetchTasks();
     }
   };
 
@@ -207,38 +371,57 @@ const Tasks = () => {
     if (!newSubtaskName.trim()) { setAddingSubtaskTo(null); return; }
     try {
       const parentIdInt = parseInt(parentTask.taskId);
-      const categoryIdInt = parseInt(parentTask.categoryId);
+      let categoryIdInt = parseInt(parentTask.categoryId);
+
+      // Fallback nếu CategoryId không hợp lệ (NaN hoặc 0)
+      if (isNaN(categoryIdInt) || categoryIdInt <= 0) {
+        // Thử lấy category đầu tiên nếu có
+        categoryIdInt = categories.length > 0 ? (categories[0].categoryId || categories[0].id) : 1;
+      }
+
       const pidStr = parentIdInt.toString();
 
-      const res = await taskService.createTask({
+      // Đảm bảo DueDate không ở quá khứ (Validator API yêu cầu)
+      let dueDate = parentTask.dueDate ? new Date(parentTask.dueDate) : new Date();
+      if (dueDate < new Date().setHours(0, 0, 0, 0)) {
+        dueDate = new Date();
+      }
+
+      const payload = {
         TaskName: newSubtaskName,
-        taskName: newSubtaskName,
-        Description: `Subtask of ${parentTask.taskName}`,
-        description: `Subtask of ${parentTask.taskName}`,
+        Description: `Subtask của ${parentTask.taskName}`,
         ParentId: parentIdInt,
-        parentId: parentIdInt,
-        CategoryId: categoryIdInt, 
-        categoryId: categoryIdInt,
+        CategoryId: categoryIdInt,
         Priority: 1,
-        priority: 1,
-        Status: 0,
-        status: 0,
-        DueDate: parentTask.dueDate || new Date().toISOString()
-      });
+        DueDate: dueDate.toISOString()
+      };
+
+      console.log("Creating subtask with payload:", payload);
+
+      const res = await taskService.createTask(payload);
 
       if (res) {
-        // UNWRAP the axios response to reach the real task data
+        console.log("Create subtask API success:", res);
+        // UNWRAP the axios response
         const savedData = res.data || res.result || res;
         const normalizedChild = normalizeTask(savedData);
-        
-        // RECOVERY FALLBACK: Force-link if the server return is ambiguous
-        if (!normalizedChild.parentId) { normalizedChild.parentId = parentIdInt; }
 
-        setSubtasksMap(prev => ({
-          ...prev,
-          [pidStr]: [...(prev[pidStr] || []), normalizedChild]
-        }));
-        
+        // RECOVERY FALLBACK: Force-link if the server return is ambiguous
+        if (!normalizedChild.parentId) {
+          normalizedChild.parentId = parentIdInt;
+        }
+
+        console.log("Newly added subtask normalized:", normalizedChild);
+
+        setSubtasksMap(prev => {
+          const pid = normalizedChild.parentId.toString();
+          const currentSubs = prev[pid] || [];
+          return {
+            ...prev,
+            [pid]: [...currentSubs, normalizedChild]
+          };
+        });
+
         if (!expandedTasks.has(pidStr)) {
           setExpandedTasks(prev => new Set(prev).add(pidStr));
         }
@@ -247,24 +430,32 @@ const Tasks = () => {
       setAddingSubtaskTo(null);
     } catch (err) {
       console.error("Create Subtask Error:", err);
-      alert("Failed to save subtask. Please check if Parent Task exists.");
+      // alert("Failed to save subtask. " + (err.response?.data || ""));
     }
   };
 
   const handleCreateTaskSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await taskService.createTask({
+      let categoryIdInt = parseInt(newTaskData.categoryId);
+      if (isNaN(categoryIdInt)) {
+        categoryIdInt = categories.length > 0 ? (categories[0].categoryId || categories[0].id) : 1;
+      }
+
+      const payload = {
         TaskName: newTaskData.taskName,
         Description: newTaskData.description || '',
         Priority: parseInt(newTaskData.priority),
-        CategoryId: parseInt(newTaskData.categoryId),
+        CategoryId: categoryIdInt,
         DueDate: new Date().toISOString()
-      });
+      };
+
+      console.log("Creating main task with payload:", payload);
+      const res = await taskService.createTask(payload);
       if (res) {
-          setTasks([normalizeTask(res), ...tasks]);
-          setShowCreateModal(false);
-          setNewTaskData({ taskName: '', categoryId: '', priority: 1, description: '' });
+        setTasks([normalizeTask(res), ...tasks]);
+        setShowCreateModal(false);
+        setNewTaskData({ taskName: '', categoryId: '', priority: 1, description: '' });
       }
     } catch (err) {
       alert("Creation failed.");
@@ -283,13 +474,13 @@ const Tasks = () => {
       });
 
       if (activeTask.parentId !== null && activeTask.parentId !== undefined) {
-          const pid = activeTask.parentId;
-          setSubtasksMap(prev => ({
-              ...prev,
-              [pid]: (prev[pid] || []).map(s => s.taskId === activeTask.taskId ? activeTask : s)
-          }));
+        const pid = activeTask.parentId;
+        setSubtasksMap(prev => ({
+          ...prev,
+          [pid]: (prev[pid] || []).map(s => s.taskId === activeTask.taskId ? activeTask : s)
+        }));
       } else {
-          setTasks(tasks.map(t => t.taskId === activeTask.taskId ? activeTask : t));
+        setTasks(tasks.map(t => t.taskId === activeTask.taskId ? activeTask : t));
       }
       setActiveTask(null);
     } catch (err) {
@@ -301,29 +492,97 @@ const Tasks = () => {
   const filteredTasks = useMemo(() => {
     return tasks.filter(t => {
       const matchesSearch = t.taskName.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || t.status.toString() === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesStatus = statusFilter === 'all' || mapStatus(t.status).toString() === statusFilter;
+      const matchesCategory = categoryFilter === 'all' || (t.categoryId && t.categoryId.toString() === categoryFilter);
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [tasks, searchTerm, statusFilter]);
+  }, [tasks, searchTerm, statusFilter, categoryFilter]);
 
-  const getStatusLabel = (s) => ['Pending', 'In Progress', 'Completed', 'Accepted'][mapStatus(s)] || 'Pending';
+  // logic grouping: ClickUp Style (Project or Status)
+  const groupedTasks = useMemo(() => {
+    if (groupBy === 'status') {
+      const statuses = [
+        { id: '0', name: 'TO DO', color: '#64748b', icon: <Circle size={18} /> },
+        { id: '1', name: 'IN PROGRESS', color: '#0055cc', icon: <AlertCircle size={18} /> },
+        { id: '2', name: 'DONE', color: '#006644', icon: <CheckCircle2 size={18} /> }
+      ];
+      return statuses.map(s => ({
+        id: s.id,
+        categoryName: s.name,
+        color: s.color,
+        icon: s.icon,
+        tasks: filteredTasks.filter(t => t.status.toString() === s.id)
+      })).filter(g => g.tasks.length > 0);
+    }
+
+    const groups = {};
+    filteredTasks.forEach(task => {
+      const catId = task.categoryId?.toString() || 'uncategorized';
+      if (!groups[catId]) {
+        const cat = categories.find(c => (c.categoryId || c.id).toString() === catId);
+        groups[catId] = {
+          id: catId,
+          categoryName: cat?.categoryName || cat?.name || (catId === 'uncategorized' ? 'Uncategorized' : 'General'),
+          color: cat?.color || '#94a3b8',
+          icon: <FolderKanban size={18} color={cat?.color || '#94a3b8'} />,
+          tasks: []
+        };
+      }
+      groups[catId].tasks.push(task);
+    });
+
+    return Object.values(groups).sort((a, b) => {
+      if (a.id === 'uncategorized') return 1;
+      if (b.id === 'uncategorized') return -1;
+      return a.categoryName.localeCompare(b.categoryName);
+    });
+  }, [filteredTasks, categories, groupBy]);
+
+  const getStatusLabel = (s) => ['Pending', 'In Progress', 'Completed'][mapStatus(s)] || 'Pending';
   const getPriorityLabel = (p) => ['Low', 'Medium', 'High'][parseInt(p)] || 'Medium';
-  const getCategoryName = (id) => categories.find(c => (c.categoryId === id || c.id === id))?.categoryName || 'General';
+
+  const getCategoryName = (id) => {
+    if (!id) return 'General';
+    const cat = categories.find(c =>
+      (c.categoryId == id || c.CategoryId == id || c.id == id)
+    );
+    return cat ? (cat.categoryName || cat.CategoryName || cat.name) : 'General';
+  };
+
+  const getCategoryColor = (id) => {
+    const cat = categories.find(c => (c.categoryId == id || c.id == id));
+    return cat?.color || '#94a3b8';
+  };
+
+  const getSubtaskStats = (parentId) => {
+    const list = subtasksMap[parentId.toString()] || [];
+    if (list.length === 0) return null;
+    const done = list.filter(s => mapStatus(s.status) === 2).length;
+    return { total: list.length, done };
+  };
+
+  const currentProjectName = useMemo(() => {
+    if (categoryFilter === 'all') return 'Work Management';
+    const cat = categories.find(c => (c.categoryId || c.id || '').toString() === categoryFilter);
+    return cat ? (cat.categoryName || cat.name || 'Project') : 'Work Management';
+  }, [categoryFilter, categories]);
 
   return (
     <div className="tasks-container">
-      {/* HEADER */}
+      {/* HEADER: Integration style */}
       <header className="tasks-header">
-        <div className="header-left">
-          <h1>Work Management</h1>
+        <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <h1>{currentProjectName}</h1>
           <div className="header-badges">
-            <span className="badge">Total Tasks: {tasks.length}</span>
-            <span className="badge badge-blue">Done: {tasks.filter(t => t.status === 2).length}</span>
+            <span className="badge">Total: <strong>{tasks.length}</strong></span>
+            <span className="badge badge-blue">Done: <strong>{tasks.filter(t => t.status === 2).length}</strong></span>
           </div>
         </div>
         <div className="header-right">
-          <button className="btn-secondary"><Download size={18} /> Export CSV</button>
-          <button className="btn-primary" onClick={() => setShowCreateModal(true)}><Plus size={18} /> New Project Task</button>
+          <button className="btn-secondary" style={{ padding: '8px 12px' }}><Download size={16} /> Export</button>
+          <button className="btn-primary" style={{ padding: '8px 16px' }} onClick={() => setShowCreateModal(true)}>
+            <Plus size={18} /> New Task
+          </button>
         </div>
       </header>
 
@@ -334,12 +593,49 @@ const Tasks = () => {
           <input type="text" placeholder="Search tasks..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="filter-group">
-          <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="all">Every status</option>
+          <Filter size={18} />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">All Status</option>
             <option value="0">Pending</option>
             <option value="1">In Progress</option>
             <option value="2">Completed</option>
           </select>
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <option value="all">All Projects</option>
+            {categories.map(cat => (
+              <option key={cat.categoryId || cat.id} value={cat.categoryId || cat.id}>
+                {cat.categoryName || cat.name}
+              </option>
+            ))}
+          </select>
+
+          <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 8px' }}></div>
+          <div className="filter-item">
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', marginRight: '8px' }}>GROUP BY</span>
+            <select value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
+              <option value="category">List / Project</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+
+          <div style={{ width: '1px', height: '20px', background: '#e2e8f0', margin: '0 8px' }}></div>
+          <div className="filter-item">
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', marginRight: '8px' }}>SUBTASKS</span>
+            <select value={subtaskDisplayMode} onChange={(e) => setSubtaskDisplayMode(e.target.value)}>
+              <option value="nested">Collapsed</option>
+              <option value="expanded">Expanded</option>
+              <option value="hidden">Hidden</option>
+            </select>
+          </div>
+
+          <button
+            className="btn-secondary"
+            style={{ marginLeft: '12px' }}
+            onClick={expandedTasks.size > 0 ? collapseAllSubtasks : expandAllSubtasks}
+          >
+            {expandedTasks.size > 0 ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {expandedTasks.size > 0 ? 'Collapse All' : 'Expand All'}
+          </button>
         </div>
       </div>
 
@@ -348,9 +644,19 @@ const Tasks = () => {
         <table className="task-table">
           <thead>
             <tr>
-              <th width="40"><input type="checkbox" /></th>
+              <th style={{ width: '4px', padding: 0 }}></th>
+              <th width="40">
+                <input
+                  type="checkbox"
+                  checked={tasks.length > 0 && selectedTaskIds.size === tasks.length}
+                  onChange={() => {
+                    if (selectedTaskIds.size === tasks.length) setSelectedTaskIds(new Set());
+                    else setSelectedTaskIds(new Set(tasks.map(t => t.taskId.toString())));
+                  }}
+                />
+              </th>
               <th>TASK NAME & DESCRIPTION</th>
-              <th>CATEGORY</th>
+              <th>LIST / PROJECT</th>
               <th>DEADLINE</th>
               <th>PRIORITY</th>
               <th>STATUS</th>
@@ -358,148 +664,372 @@ const Tasks = () => {
             </tr>
           </thead>
           <tbody>
-             {filteredTasks.map((task) => (
-               <React.Fragment key={task.taskId}>
-                  <tr className={`task-row-main clickable-row ${expandedTasks.has(task.taskId.toString()) ? 'active-parent' : ''}`} onClick={() => setActiveTask(task)}>
-                    <td><input type="checkbox" onClick={(e) => e.stopPropagation()} /></td>
-                    <td>
-                      <div className="task-name-cell">
-                        <button className="btn-expander" onClick={(e) => { e.stopPropagation(); toggleSubtasks(task.taskId); }}>
-                           {expandedTasks.has(task.taskId.toString()) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
+            {groupedTasks.map((group) => (
+              <React.Fragment key={group.id}>
+                <tr className={`project-group-header ${collapsedGroups.has(group.id) ? 'collapsed' : ''}`} onClick={() => toggleGroup(group.id)}>
+                  <td colSpan="8">
+                    <div className="group-header-content" style={{ borderLeft: `6px solid ${group.color}` }}>
+                      {collapsedGroups.has(group.id) ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                      {group.icon}
+                      <span className="group-title">{group.categoryName}</span>
+                      <span className="group-count">{group.tasks.length}</span>
+                    </div>
+                  </td>
+                </tr>
+                {!collapsedGroups.has(group.id) && group.tasks.map((task) => (
+                  <React.Fragment key={task.taskId}>
+                    <tr
+                      className={`task-row-main clickable-row ${expandedTasks.has(task.taskId.toString()) ? 'active-parent' : ''}`}
+                      onClick={() => setActiveTask(task)}
+                      style={{ '--project-color': group.color }}
+                    >
+                      <td className="project-indicator-cell">
+                        <div className="project-indicator-bar" style={{ backgroundColor: 'var(--project-color)' }}></div>
+                      </td>
+                      <td className="checkbox-cell">
+                        <input
+                          type="checkbox"
+                          checked={selectedTaskIds.has(task.taskId.toString())}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelectTask(task.taskId)}
+                        />
+                      </td>
+                      <td>
                         <div className="task-info">
-                          <div style={{display:'flex', alignItems:'center'}}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {task.hasSubtasks && (
+                              <div
+                                className={`row-expander inline ${expandedTasks.has(task.taskId.toString()) ? 'expanded' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleSubtasks(task.taskId.toString());
+                                }}
+                              >
+                                <ChevronRight size={16} />
+                              </div>
+                            )}
                             <span className="task-title">{task.taskName}</span>
-                            {/* DYNAMIC PROGRESS BADGE */}
-                            {((subtasksMap[task.taskId.toString()] || []).length > 0) && (
-                              <span className={`progress-badge ${(subtasksMap[task.taskId.toString()].filter(s => s.status === 2).length === subtasksMap[task.taskId.toString()].length) ? 'all-done' : ''}`}>
-                                {(subtasksMap[task.taskId.toString()].filter(s => s.status === 2).length === subtasksMap[task.taskId.toString()].length) ? '✔ ' : ''}
-                                {subtasksMap[task.taskId.toString()].filter(s => s.status === 2).length}/{subtasksMap[task.taskId.toString()].length} DONE
-                              </span>
+                            {getSubtaskStats(task.taskId) && (
+                              <div className="subtask-progress-mini" title="Subtask Progress">
+                                <CheckSquare size={12} />
+                                {getSubtaskStats(task.taskId).done}/{getSubtaskStats(task.taskId).total}
+                              </div>
                             )}
                           </div>
-                          <div className="task-desc-sub">{task.description || 'No additional details provided'}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span className="cell-category">{getCategoryName(task.categoryId)}</span></td>
-                    <td><span className="cell-date">{task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : '---'}</span></td>
-                    <td><span className={`priority-tag ${getPriorityLabel(task.priority)}`}>{getPriorityLabel(task.priority)}</span></td>
-                    <td>
-                      <select className={`status-dropdown ${getStatusLabel(task.status).replace(/\s/g, '')}`} value={task.status} onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleQuickUpdate(e, task, 'status', e.target.value)}>
-                        <option value="0">Pending</option>
-                        <option value="1">In Progress</option>
-                        <option value="2">Completed</option>
-                        <option value="3">Accepted</option>
-                      </select>
-                    </td>
-                    <td>
-                      <div className="action-buttons-cell">
-                        <button className="action-btn plus" title="Add Subtask" onClick={(e) => { e.stopPropagation(); setAddingSubtaskTo(task.taskId); }}><Plus size={16} /></button>
-                        <button className="action-btn delete" title="Delete Task" onClick={(e) => { e.stopPropagation(); handleDelete(task.taskId); }}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {addingSubtaskTo === task.taskId && (
-                    <tr className="subtask-input-row" key={`input-${task.taskId}`}>
-                      <td></td>
-                      <td colSpan="6" className="subtask-connector-cell">
-                        <div className="inline-input-wrapper">
-                           <Plus size={18} color="#4f46e5" strokeWidth={3} />
-                           <input autoFocus className="inline-subtask-input" placeholder="What needs to be done?" value={newSubtaskName} onChange={(e)=>setNewSubtaskName(e.target.value)} onKeyDown={(e)=> { if (e.key === 'Enter') handleAddSubtaskSubmit(task); if (e.key === 'Escape') setAddingSubtaskTo(null); }} onBlur={()=>!newSubtaskName.trim() && setAddingSubtaskTo(null)} />
-                           <div className="input-actions-hint">
-                              <span className="kdb-badge save">Enter to Save</span>
-                              <span className="kdb-badge">Esc</span>
-                           </div>
                         </div>
                       </td>
+                      <td>
+                        <span
+                          className="project-tag"
+                          style={{
+                            backgroundColor: `${group.color}15`,
+                            color: group.color,
+                            borderColor: `${group.color}30`
+                          }}
+                        >
+                          <FolderKanban size={12} style={{ marginRight: '6px' }} />
+                          {getCategoryName(task.categoryId)}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="deadline-cell">
+                          <Calendar size={14} />
+                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString('vi-VN') : 'No date'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`priority-tag p-${task.priority}`}>
+                          {['Low', 'Medium', 'High'][task.priority]}
+                        </span>
+                      </td>
+                      <td>
+                        <select
+                          className={`status-select s-${task.status}`}
+                          value={task.status}
+                          onChange={(e) => handleQuickUpdate(e, task, 'status', e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="0">TO DO</option>
+                          <option value="1">IN PROGRESS</option>
+                          <option value="2">DONE</option>
+                        </select>
+                      </td>
+                      <td className="actions-cell">
+                        <button
+                          className="btn-action plus"
+                          title="Add Subtask"
+                          onClick={(e) => { e.stopPropagation(); setAddingSubtaskTo(task.taskId.toString()); }}
+                        >
+                          <Plus size={16} />
+                        </button>
+                        <button className="btn-action" onClick={(e) => { e.stopPropagation(); setActiveTask(task); }}><Edit2 size={16} /></button>
+                        <button className="btn-action delete" onClick={(e) => { e.stopPropagation(); handleDelete(task.taskId); }}><Trash2 size={16} /></button>
+                      </td>
                     </tr>
-                  )}
-
-                  {expandedTasks.has(task.taskId.toString()) && (
-                    (subtasksMap[task.taskId.toString()] || []).length > 0 ? (
-                      subtasksMap[task.taskId.toString()].map(sub => (
-                        <tr key={`sub-${sub.taskId}`} className="subtask-row clickable-row" onClick={() => setActiveTask(sub)}>
+                    {addingSubtaskTo === task.taskId.toString() && (
+                      <tr className="subtask-input-row" onClick={(e) => e.stopPropagation()}>
+                        <td className="project-indicator-cell">
+                          <div className="project-indicator-bar small" style={{ backgroundColor: 'var(--project-color)', opacity: 0.8 }}></div>
+                        </td>
+                        <td></td>
+                        <td colSpan="6" className="subtask-connector-cell">
+                          <div className="inline-input-wrapper">
+                            <Plus size={14} className="input-icon" />
+                            <input
+                              className="inline-subtask-input"
+                              placeholder="New subtask name..."
+                              autoFocus
+                              value={newSubtaskName}
+                              onChange={(e) => setNewSubtaskName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddSubtaskSubmit(task);
+                                if (e.key === 'Escape') {
+                                  setAddingSubtaskTo(null);
+                                  setNewSubtaskName('');
+                                }
+                              }}
+                            />
+                            <div className="input-actions-hint">
+                              <span className="kdb-badge save">Enter</span>
+                              <span className="kdb-badge">Esc</span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    {(subtaskDisplayMode === 'expanded' || (subtaskDisplayMode === 'nested' && expandedTasks.has(task.taskId.toString()))) &&
+                      (subtasksMap[task.taskId.toString()] || []).map(sub => (
+                        <tr key={`sub-${sub.taskId}`} className="subtask-row clickable-row" onClick={() => setActiveTask(sub)} style={{ '--project-color': group.color }}>
+                          <td className="project-indicator-cell">
+                            <div className="project-indicator-bar small" style={{ backgroundColor: 'var(--project-color)', opacity: 0.6 }}></div>
+                          </td>
                           <td></td>
                           <td className="subtask-connector-cell">
-                            <div className="task-name-cell">
-                               <div className="subtask-icon-wrapper"><Subtitles size={12} /></div>
-                               <span className="task-title">{sub.taskName}</span>
+                            <div className="task-name-cell" style={{ marginLeft: '24px' }}>
+                              <span className="task-title subtask-title">{sub.taskName}</span>
                             </div>
                           </td>
-                          <td style={{opacity:0.6}}>{getCategoryName(sub.categoryId)}</td>
-                          <td style={{opacity:0.6}}>{sub.dueDate ? new Date(sub.dueDate).toLocaleDateString('vi-VN') : '---'}</td>
-                          <td><span className={`priority-tag ${getPriorityLabel(sub.priority)}`}>{getPriorityLabel(sub.priority)}</span></td>
+                          <td></td>
                           <td>
-                            <select className={`status-dropdown ${getStatusLabel(sub.status).replace(/\s/g, '')}`} value={sub.status} onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleQuickUpdate(e, sub, 'status', e.target.value)}>
-                              <option value="0">Pending</option>
-                              <option value="1">In Progress</option>
-                              <option value="2">Completed</option>
-                              <option value="3">Accepted</option>
+                            <div className="deadline-cell small">
+                              {sub.dueDate ? new Date(sub.dueDate).toLocaleDateString('vi-VN') : '-'}
+                            </div>
+                          </td>
+                          <td><span className={`priority-tag p-${sub.priority} small`}>{['Low', 'Medium', 'High'][sub.priority]}</span></td>
+                          <td>
+                            <select
+                              className={`status-select s-${sub.status} small`}
+                              value={sub.status}
+                              onChange={(e) => handleQuickUpdate(e, sub, 'status', e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ minWidth: '90px', padding: '4px 8px', fontSize: '0.65rem' }}
+                            >
+                              <option value="0">TO DO</option>
+                              <option value="1">IN PROGRESS</option>
+                              <option value="2">DONE</option>
                             </select>
                           </td>
-                          <td><button className="action-btn delete" onClick={(e) => { e.stopPropagation(); handleDelete(sub.taskId); }}><Trash2 size={16} /></button></td>
+                          <td className="actions-cell"></td>
                         </tr>
-                      ))
-                    ) : (
-                      !addingSubtaskTo && (
-                        <tr className="subtask-input-row" key={`empty-${task.taskId}`}>
-                          <td></td>
-                          <td colSpan="6" className="subtask-connector-cell">
-                             <div className="empty-subtask-placeholder">
-                               <AlignLeft size={14} /> No detailed subtasks yet. Click '+' to add one.
-                             </div>
-                          </td>
-                        </tr>
-                      )
-                    )
-                  )}
-               </React.Fragment>
-             ))}
+                      ))}
+                  </React.Fragment>
+                ))}
+              </React.Fragment>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* DETAIL SIDE PANEL */}
-      <div className={`task-detail-panel ${activeTask ? 'open' : ''}`}>
-        {activeTask && (
-          <>
-            <div className="panel-header"><h2>Task Analysis</h2><button className="btn-close" onClick={() => setActiveTask(null)}><X size={24} /></button></div>
-            <div className="panel-content">
-              <input type="text" className="detail-title-input" value={activeTask.taskName || ''} onChange={(e) => setActiveTask({ ...activeTask, taskName: e.target.value })} />
-              <div className="detail-meta-grid">
-                <div className="meta-item"><span className="meta-label"><Tag size={16} /> Category</span><select className="detail-select-input" value={activeTask.categoryId || ''} onChange={(e) => setActiveTask({ ...activeTask, categoryId: parseInt(e.target.value) })}><option value="">Select Project</option>{categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.categoryName}</option>)}</select></div>
-                <div className="meta-item"><span className="meta-label"><Calendar size={16} /> Timeline</span><input type="datetime-local" className="detail-date-input" value={activeTask.dueDate ? new Date(activeTask.dueDate).toISOString().slice(0, 16) : ''} onChange={(e) => setActiveTask({ ...activeTask, dueDate: e.target.value ? new Date(e.target.value).toISOString() : null })} /></div>
-                <div className="meta-item"><span className="meta-label"><Flag size={16} /> Priority</span><select className="detail-select-input" value={activeTask.priority} onChange={(e)=>setActiveTask({...activeTask, priority:parseInt(e.target.value)})}>{['Low','Medium','High'].map((l,i)=><option key={i} value={i}>{l}</option>)}</select></div>
-                <div className="meta-item"><span className="meta-label"><CheckSquare size={16} /> Current Status</span><select className="detail-select-input" value={activeTask.status} onChange={(e)=>setActiveTask({...activeTask, status:parseInt(e.target.value)})}>{['Pending','In Progress','Completed'].map((l,i)=><option key={i} value={i}>{l}</option>)}</select></div>
+      {/* CLICKUP STYLE TASK BAR (MULTI-SELECT TOOLBAR) */}
+      {selectedTaskIds.size > 0 && (
+        <div className="clickup-task-bar">
+          <div className="task-bar-content">
+            <div className="selection-info">
+              <span className="count">{selectedTaskIds.size}</span>
+              <span className="label">Tasks Selected</span>
+              <button className="btn-text-clear" onClick={() => setSelectedTaskIds(new Set())}>Deselect</button>
+            </div>
+
+            <div className="task-bar-actions">
+              <div className="action-item">
+                <CheckCircle2 size={16} />
+                <span>Status</span>
+                <select onChange={(e) => handleBulkAction('status', parseInt(e.target.value))} defaultValue="">
+                  <option value="" disabled>Set...</option>
+                  <option value="0">TO DO</option>
+                  <option value="1">IN PROGRESS</option>
+                  <option value="2">DONE</option>
+                </select>
               </div>
-              <div className="detail-group desc-group">
-                <div className="desc-header"><AlignLeft size={20} /> <span style={{fontWeight:800, fontSize:'1.1rem'}}>Strategic Description</span></div>
-                <textarea className="detail-desc-input" rows="8" value={activeTask.description || ''} onChange={(e) => setActiveTask({ ...activeTask, description: e.target.value })} placeholder="Document guidelines..."></textarea>
+
+              <div className="action-item">
+                <Flag size={16} />
+                <span>Priority</span>
+                <select onChange={(e) => handleBulkAction('priority', parseInt(e.target.value))} defaultValue="">
+                  <option value="" disabled>Set...</option>
+                  <option value="0">LOW</option>
+                  <option value="1">MEDIUM</option>
+                  <option value="2">HIGH</option>
+                </select>
+              </div>
+
+              <button className="btn-bulk-delete" onClick={handleBulkDelete}>
+                <Trash2 size={18} />
+                Delete
+              </button>
+            </div>
+
+            <button className="btn-close-bar" onClick={() => setSelectedTaskIds(new Set())}>
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DETAIL SIDE PANEL: Only render if activeTask exists */}
+      {
+        activeTask && (
+          <>
+            <div className="overlay" onClick={() => setActiveTask(null)}></div>
+            <div className="task-detail-panel open">
+              <div className="panel-header">
+                <h2>Task Analysis</h2>
+                <button className="btn-close" onClick={() => setActiveTask(null)}><X size={24} /></button>
+              </div>
+              <div className="panel-content">
+                <input
+                  type="text"
+                  className="detail-title-input"
+                  value={activeTask.taskName || ''}
+                  onChange={(e) => setActiveTask({ ...activeTask, taskName: e.target.value })}
+                />
+                <div className="detail-meta-grid">
+                  <div className="meta-item">
+                    <span className="meta-label"><Tag size={16} /> Category</span>
+                    <select
+                      className="detail-select-input"
+                      value={activeTask.categoryId || ''}
+                      onChange={(e) => setActiveTask({ ...activeTask, categoryId: e.target.value ? parseInt(e.target.value) : null })}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(c => (
+                        <option key={c.categoryId || c.id} value={c.categoryId || c.id}>
+                          {c.categoryName || c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="meta-item">
+                    <span className="meta-label"><Calendar size={16} /> Timeline</span>
+                    <input
+                      type="datetime-local"
+                      className="detail-date-input"
+                      value={(() => {
+                        if (!activeTask.dueDate) return '';
+                        try {
+                          const d = new Date(activeTask.dueDate);
+                          return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+                        } catch { return ''; }
+                      })()}
+                      onChange={(e) => setActiveTask({ ...activeTask, dueDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                    />
+                  </div>
+                  <div className="meta-item">
+                    <span className="meta-label"><Flag size={16} /> Priority</span>
+                    <select
+                      className="detail-select-input"
+                      value={activeTask.priority}
+                      onChange={(e) => setActiveTask({ ...activeTask, priority: parseInt(e.target.value) })}
+                    >
+                      {['Low', 'Medium', 'High'].map((l, i) => <option key={i} value={i}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div className="meta-item">
+                    <span className="meta-label"><CheckSquare size={16} /> Current Status</span>
+                    <select
+                      className={`detail-select-input status-select s-${activeTask.status}`}
+                      value={activeTask.status}
+                      onChange={(e) => setActiveTask({ ...activeTask, status: parseInt(e.target.value) })}
+                    >
+                      <option value="0">TO DO</option>
+                      <option value="1">IN PROGRESS</option>
+                      <option value="2">DONE</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="detail-group desc-group">
+                  <div className="desc-header">
+                    <AlignLeft size={20} />
+                    <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>Strategic Description</span>
+                  </div>
+                  <textarea
+                    className="detail-desc-input"
+                    rows="8"
+                    value={activeTask.description || ''}
+                    onChange={(e) => setActiveTask({ ...activeTask, description: e.target.value })}
+                    placeholder="Document guidelines..."
+                  ></textarea>
+                </div>
+
+                {/* SIDE PANEL SUBTASKS SECTION */}
+                <div className="detail-group subtasks-group" style={{ marginTop: '32px' }}>
+                  <div className="desc-header" style={{ marginBottom: '16px' }}>
+                    <Subtitles size={20} />
+                    <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>Subtasks</span>
+                  </div>
+
+                  <div className="side-panel-subtasks-list">
+                    {subtasksMap[activeTask.taskId.toString()]?.map(s => (
+                      <div key={s.taskId} className="side-subtask-item">
+                        <CheckCircle2 size={16} className={s.status === 2 ? 'done' : ''} />
+                        <span className={`side-subtask-title ${s.status === 2 ? 'strike' : ''}`}>{s.taskName}</span>
+                        <span className={`status-pill s-${s.status} mini`}>{['TODO', 'WORK', 'DONE'][s.status]}</span>
+                      </div>
+                    ))}
+
+                    <div className="side-quick-add">
+                      <input
+                        type="text"
+                        placeholder="+ Add a subtask..."
+                        className="side-subtask-input"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleAddSubtaskSubmit(activeTask);
+                            e.target.value = '';
+                          }
+                        }}
+                        onChange={(e) => setNewSubtaskName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="panel-footer">
+                <button className="btn-secondary" onClick={() => setActiveTask(null)}>Discard</button>
+                <button className="btn-primary" onClick={handleActiveTaskSave}>Apply Changes</button>
               </div>
             </div>
-            <div className="panel-footer"><button className="btn-secondary" onClick={() => setActiveTask(null)}>Discard</button><button className="btn-primary" onClick={handleActiveTaskSave}>Apply Changes</button></div>
           </>
-        )}
-      </div>
-      {activeTask && <div className="overlay" onClick={() => setActiveTask(null)}></div>}
+        )
+      }
 
       {/* CREATE MODAL OVERLAY */}
-      {showCreateModal && (
-        <>
-          <div className="overlay" onClick={() => setShowCreateModal(false)}></div>
-          <div className="task-detail-panel open" style={{ maxWidth: '500px', height: 'auto', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)', left: '50%', right: 'auto', borderRadius: '20px' }}>
-            <div className="panel-header"><h2>Create New Project Task</h2><button className="btn-close" onClick={() => setShowCreateModal(false)}><X size={24} /></button></div>
-            <form className="panel-content" onSubmit={handleCreateTaskSubmit}>
-              <div className="meta-item" style={{marginBottom:'20px'}}><label className="meta-label">Task Name</label><input type="text" className="detail-title-input" style={{fontSize:'1.2rem', marginBottom:0}} placeholder="Task Title..." value={newTaskData.taskName} onChange={(e) => setNewTaskData({ ...newTaskData, taskName: e.target.value })} required /></div>
-              <div className="meta-item"><label className="meta-label">Project Category</label><select className="detail-select-input" value={newTaskData.categoryId} onChange={(e) => setNewTaskData({ ...newTaskData, categoryId: e.target.value })} required><option value="" disabled>Select Category</option>{categories.map(c => <option key={c.categoryId || c.id} value={c.categoryId || c.id}>{c.categoryName || c.name}</option>)}</select></div>
-              <div className="panel-footer" style={{padding:'20px 0 0 0', background:'transparent'}}><button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button><button type="submit" className="btn-primary">Create Task</button></div>
-            </form>
-          </div>
-        </>
-      )}
-    </div>
+      {
+        showCreateModal && (
+          <>
+            <div className="overlay" onClick={() => setShowCreateModal(false)}></div>
+            <div className="task-detail-panel open" style={{ maxWidth: '500px', height: 'auto', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)', left: '50%', right: 'auto', borderRadius: '20px' }}>
+              <div className="panel-header"><h2>Create New Project Task</h2><button className="btn-close" onClick={() => setShowCreateModal(false)}><X size={24} /></button></div>
+              <form className="panel-content" onSubmit={handleCreateTaskSubmit}>
+                <div className="meta-item" style={{ marginBottom: '20px' }}><label className="meta-label">Task Name</label><input type="text" className="detail-title-input" style={{ fontSize: '1.2rem', marginBottom: 0 }} placeholder="Task Title..." value={newTaskData.taskName} onChange={(e) => setNewTaskData({ ...newTaskData, taskName: e.target.value })} required /></div>
+                <div className="meta-item"><label className="meta-label">Assign to Project</label><select className="detail-select-input" value={newTaskData.categoryId} onChange={(e) => setNewTaskData({ ...newTaskData, categoryId: e.target.value })} required><option value="" disabled>Select Project</option>{categories.map(c => <option key={c.categoryId || c.id} value={c.categoryId || c.id}>{c.categoryName || c.name}</option>)}</select></div>
+                <div className="panel-footer" style={{ padding: '20px 0 0 0', background: 'transparent' }}><button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button><button type="submit" className="btn-primary">Create Task</button></div>
+              </form>
+            </div>
+          </>
+        )
+      }
+    </div >
   );
 };
 

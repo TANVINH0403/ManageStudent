@@ -13,6 +13,7 @@ namespace API.Controllers
     [Authorize]
     public class CategoryController : ControllerBase
     {
+        private readonly ILogger<CategoryController> _logger;
         private readonly CreateCategoryHandle _cateCreateHandle;
         private readonly GetAllCategoryHandler _getAllCateHandle;
         private readonly GetCategoryByIdHandle _getByIdCatedHandle;
@@ -21,7 +22,8 @@ namespace API.Controllers
         private readonly CompletedCategoryHandle _completedCateHandle;
         private readonly UpdateVisibility _updateVisi;
 
-        public CategoryController(CreateCategoryHandle cateHandle,
+        public CategoryController(ILogger<CategoryController> logger,
+            CreateCategoryHandle cateHandle,
             GetAllCategoryHandler getAllCate,
             GetCategoryByIdHandle getByIdCateHandle,
             UpdateCategoryHandle updateCateHandle,
@@ -30,6 +32,7 @@ namespace API.Controllers
             UpdateVisibility updateVisi
             )
         {
+            _logger = logger;
             _cateCreateHandle = cateHandle;
             _getAllCateHandle = getAllCate;
             _getByIdCatedHandle = getByIdCateHandle;
@@ -143,15 +146,20 @@ namespace API.Controllers
         public async Task<IActionResult> UpdateVisibiity(int categoryId, [FromBody] UpdateVisibilityRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized();
 
             var userId = int.Parse(userIdClaim);
-
-            await _updateVisi.Handle(categoryId, userId, request.visibility);
-
-            return NoContent();
+            try 
+            {
+                await _updateVisi.Handle(categoryId, userId, request.visibility);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                 _logger.LogError(ex, "Error updating visibility for category {CategoryId}", categoryId);
+                 return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

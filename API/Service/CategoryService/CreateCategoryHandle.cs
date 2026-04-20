@@ -34,6 +34,10 @@ namespace API.Service.CategoryService
             var category = new Category
             {
                 CategoryName = request.CategoryName,
+                Description = request.Description,
+                Priority = request.Priority,
+                Status = request.Status,
+                EndDate = request.EndDate,
                 UserId = userId
             };
 
@@ -44,7 +48,13 @@ namespace API.Service.CategoryService
             return new CategoryResponseDto
             {
                 CategoryId = category.CategoryId,
-                CategoryName = category.CategoryName
+                CategoryName = category.CategoryName,
+                Description = category.Description,
+                Visibility = category.Visibility.ToString(),
+                Priority = category.Priority,
+                Status = category.Status,
+                CreatedAt = category.CreatedAt,
+                EndDate = category.EndDate
             };
         }
     }
