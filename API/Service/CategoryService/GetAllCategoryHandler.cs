@@ -22,6 +22,12 @@ namespace API.Service.CategoryService
             {
                 CategoryId = x.CategoryId,
                 CategoryName = x.CategoryName,
+                Description = x.Description,
+                Visibility = x.Visibility.ToString(),
+                Priority = x.Priority,
+                Status = x.Status,
+                CreatedAt = x.CreatedAt,
+                EndDate = x.EndDate
             }).ToList();
         }
     }

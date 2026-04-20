@@ -113,10 +113,10 @@ namespace API.Repository
             return _context.SaveChangesAsync();
         }
 
-        public async Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId, int categoryId)
+        public async Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId)
         {
             return await _context.Tasks
-                .Where(t => t.ParentId == parentId && t.UserId == userId && t.CategoryId == categoryId)
+                .Where(t => t.ParentId == parentId && t.UserId == userId)
                 .ToListAsync();
         }
     }

@@ -17,13 +17,15 @@ namespace API.Service.CategoryService
 
         public async Task CategoryDeleteAsync(int categoryId, int userId)
         {
+            // Tìm category và nạp luôn các Task liên quan
             var category = await _cateRepo.GetByIdAsync(categoryId, userId);
+            
             if (category == null)
             {
-                throw new Exception("Category not found");
+                throw new Exception($"Category with ID {categoryId} not found for current user.");
             }
 
-            // Lấy các task thuộc category này
+            // Giải phóng các Task đang thuộc category này (set CategoryId = null)
             var tasks = await _cateRepo.GetTaskByCategoryIdAsync(categoryId, userId);
             if (tasks != null && tasks.Any())
             {
@@ -32,12 +34,6 @@ namespace API.Service.CategoryService
                     task.CategoryId = null;
                 }
                 _cateRepo.UpdateRange(tasks);
-            }
-
-            // Đảm bảo Tasks collection trong category cũng được clear để tránh lỗi FK khi SaveChanges
-            if (category.Tasks != null)
-            {
-                category.Tasks.Clear();
             }
 
             _cateRepo.Delete(category);
