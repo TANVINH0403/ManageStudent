@@ -2,6 +2,7 @@ using API.Dtos.Task;
 using API.Interfaces;
 using API.UnitOfWork;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Service.TaskService
 {
@@ -19,10 +20,8 @@ namespace API.Service.TaskService
         public async  Task<object> TaskGetHandle(GetTaskQuery request, int userId)
         {
             var  query = await  _taskRepo.GetQueryAsync(userId);
-            
-            // Chỉ lấy các task cha (Root tasks) cho danh sách chính
             query = query.Where(x => x.ParentId == null);
-
+            
             //Filter
             if(request.Status != null)
             {
@@ -49,15 +48,18 @@ namespace API.Service.TaskService
                 query = query.Where(x => x.TaskName.Contains(request.Keyword));
             }
 
-            var total = query.Count();
+            var total = query.Count(x => x.ParentId == null);
 
-            var tasks = query
+            var tasksList = await query
                 .OrderByDescending(x => x.CreatedAt)
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
-                .ToList();
+                .ToListAsync();
 
-            var result = tasks.Select(x => new TaskResponseDto
+            var taskIds = tasksList.Select(t => t.TaskId).ToList();
+            var tasksWithChildren = await _taskRepo.GetTaskIdsHasChildrenAsync(taskIds);
+
+            var result = tasksList.Select(x => new TaskResponseDto
             {
                 TaskId = x.TaskId,
                 TaskName = x.TaskName,
@@ -69,7 +71,8 @@ namespace API.Service.TaskService
                 CategoryId = x.CategoryId,
                 ParentId = x.ParentId,
                 Tags = x.TaskTags.Select(tt => tt.Tag.TagName).ToList(),
-                SubTasks = new List<TaskResponseDto>()
+                SubTasks = new List<TaskResponseDto>(),
+                HasSubtasks = tasksWithChildren.Contains(x.TaskId)
             });
 
             return new

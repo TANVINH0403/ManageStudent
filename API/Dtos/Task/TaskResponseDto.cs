@@ -17,5 +17,6 @@ namespace API.Dtos.Task
         public int? ParentId { get; set; }
         public List<TaskResponseDto> SubTasks { get; set; }
         public List<string> Tags { get; set; }
+        public bool HasSubtasks { get; set; }
     }
 }

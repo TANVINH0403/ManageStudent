@@ -12,9 +12,9 @@ namespace API.Service.TaskService
             _taskRepo = taskRepo;
         }
 
-        public async Task<List<SubTaskResponseDto>> Handle(int parentId, int userId, int categoryId)
+        public async Task<List<SubTaskResponseDto>> Handle(int parentId, int userId)
         {
-            var subTasks = await _taskRepo.GetSubTaskAsync(parentId, userId, categoryId);
+            var subTasks = await _taskRepo.GetSubTaskAsync(parentId, userId);
             if (!subTasks.Any())
             {
                 return new List<SubTaskResponseDto>();
@@ -28,9 +28,12 @@ namespace API.Service.TaskService
             {
                 TaskId = t.TaskId,
                 TaskName = t.TaskName,
+                Description = t.Description,
+                CategoryId = t.CategoryId,
+                DueDate = t.DueDate,
                 Status = t.Status,
                 Priority = t.Priority,
-                HasChildren = taskHasChildrent.Contains(t.TaskId)
+                HasSubtasks = taskHasChildrent.Contains(t.TaskId)
             }).ToList();
         }
     }

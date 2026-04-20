@@ -22,10 +22,12 @@ export const AuthProvider = ({ children }) => {
    */
   const login = async (userName, password) => {
     const result = await authService.login(userName, password);
-    // result = { success: true, data: { username, token } }
-    const authData = result.data;
-    authService.saveSession(authData.token, authData.username);
-    setUser({ username: authData.username });
+    // result = { success: true, data: { username, accessToken, refreshToken, ... } }
+    if (result.success) {
+      const authData = result.data;
+      authService.saveSession(authData.accessToken, authData.refreshToken, authData.username);
+      setUser({ username: authData.username });
+    }
     return result;
   };
 

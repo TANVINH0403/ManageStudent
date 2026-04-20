@@ -9,7 +9,17 @@ const authService = {
    */
   login: async (userName, password) => {
     const response = await axiosClient.post('/auth/login', { userName, password });
-    return response; // axiosClient trả về response.data trực tiếp
+    return response;
+  },
+
+  /**
+   * Refresh Token
+   * POST /api/auth/refresh
+   * Body: { refreshToken }
+   */
+  refresh: async (refreshToken) => {
+    const response = await axiosClient.post('/auth/refresh', { refreshToken });
+    return response;
   },
 
   /**
@@ -37,14 +47,16 @@ const authService = {
   },
 
   /** Lưu token và username vào localStorage */
-  saveSession: (token, username) => {
-    localStorage.setItem('access_token', token);
+  saveSession: (accessToken, refreshToken, username) => {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', refreshToken);
     localStorage.setItem('username', username);
   },
 
   /** Xoá phiên đăng nhập */
   logout: () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('username');
   },
 

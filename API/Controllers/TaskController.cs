@@ -228,7 +228,7 @@ namespace API.Controllers
 
             int userId = int.Parse(userIdClaim);
 
-            var result = await _getSubTasks.Handle(parentId, userId, categoryId);
+            var result = await _getSubTasks.Handle(parentId, userId);
 
             return Ok(result);
         }
