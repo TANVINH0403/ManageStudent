@@ -119,5 +119,12 @@ namespace API.Repository
                 .Where(t => t.ParentId == parentId && t.UserId == userId)
                 .ToListAsync();
         }
+
+        public async Task<List<Entities.Task>> GetTasksByIdsAsync(int userId)
+        {
+           return await _context.Tasks
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+        }
     }
 }

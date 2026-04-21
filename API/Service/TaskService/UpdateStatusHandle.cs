@@ -29,19 +29,56 @@ namespace API.Service.TaskService
                 throw new Exception("Invalid status");
             }
 
-            task.Status = status;
             if(status == Enum.TaskStatus.Completed)
             {
-                task.CompletedAt = DateTime.UtcNow;
+                await CompleteTaskTree(taskId, userId);
             }
             else
             {
+                task.Status = status;
                 task.CompletedAt = null;
             }
 
             await _uow.SaveChangesAsync();
 
             return true;
+        }
+
+
+        private async Task CompleteTaskTree(int taskId, int userId)
+        {
+            var allTasks = await _taskRepo.GetTasksByIdsAsync(userId);
+
+            var taskMap = allTasks.ToDictionary(t => t.TaskId);
+            var childrenMap = allTasks
+                .Where(t => t.ParentId != null)
+                .GroupBy(t => t.ParentId)
+                .ToDictionary(g => g.Key!.Value, g => g.ToList());
+
+            if (!taskMap.ContainsKey(taskId)) return;
+
+            var queue = new Queue<Entities.Task>();
+            queue.Enqueue(taskMap[taskId]);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+
+                if (current.Status != Enum.TaskStatus.Completed)
+                {
+                    current.Status = Enum.TaskStatus.Completed;
+                    current.CompletedAt = DateTime.UtcNow;
+                    current.UpdatedAt = DateTime.UtcNow;
+                }
+
+                if (childrenMap.ContainsKey(current.TaskId))
+                {
+                    foreach (var child in childrenMap[current.TaskId])
+                    {
+                        queue.Enqueue(child);
+                    }
+                }
+            }
         }
     }
 }
