@@ -21,6 +21,6 @@ namespace API.Interfaces
         Task<List<Entities.Task>> GetRootTasksAsync (int categoryId, int userId);
         Task<HashSet<int>> GetTaskIdsHasChildrenAsync(List<int> taskIds);
         Task<List<Entities.Task>> GetSubTaskAsync(int parentId, int userId);
-
+        Task<List<Entities.Task>> GetTasksByIdsAsync(int userId);
     }
 }

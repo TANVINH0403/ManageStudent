@@ -13,6 +13,7 @@ using API.Validator;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Formatters.Xml;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace API.Dependency
 {
@@ -90,7 +91,12 @@ namespace API.Dependency
                 });
             });
 
-            return services;
+
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
 
             return services;
         }
