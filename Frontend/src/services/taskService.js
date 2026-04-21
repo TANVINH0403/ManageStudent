@@ -59,7 +59,7 @@ const taskService = {
   // Cập nhật trạng thái (Patch)
   updateStatus: async (taskId, status) => {
     try {
-      const response = await axiosClient.patch(`/Task/${taskId}/status`, { Status: status });
+      const response = await axiosClient.patch(`/Task/${taskId}/status`, { status: status });
       return response;
     } catch (error) {
       console.error('Error updating status:', error);

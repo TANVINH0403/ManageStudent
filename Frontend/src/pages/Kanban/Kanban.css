@@ -21,7 +21,8 @@
 
 .kanban-board {
   display: flex;
-  gap: 20px; /* Khoảng cách giữa các cột gọn hơn */
+  gap: 20px;
+  /* Khoảng cách giữa các cột gọn hơn */
   flex: 1;
   overflow-x: auto;
   padding-bottom: 16px;
@@ -31,7 +32,8 @@
 .kanban-column {
   flex: 1;
   min-width: 300px;
-  background: #f8fafc; /* Màu nền xám rất nhạt của cột */
+  background: #f8fafc;
+  /* Màu nền xám rất nhạt của cột */
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -45,13 +47,26 @@
   justify-content: space-between;
   align-items: center;
   border-radius: 12px 12px 0 0;
-  color: white; /* Chữ trắng */
+  color: white;
+  /* Chữ trắng */
 }
 
 /* Các màu lấy cảm hứng từ ảnh mẫu */
-.column-header.pending { background-color: #3b82f6; } /* Xanh dương */
-.column-header.in-progress { background-color: #f59e0b; } /* Cam */
-.column-header.completed { background-color: #10b981; } /* Xanh lá */
+.column-header.pending {
+  background-color: #3b82f6;
+}
+
+/* Xanh dương */
+.column-header.in-progress {
+  background-color: #f59e0b;
+}
+
+/* Cam */
+.column-header.completed {
+  background-color: #10b981;
+}
+
+/* Xanh lá */
 
 .column-header h3 {
   font-size: 1rem;
@@ -60,7 +75,8 @@
 }
 
 .task-count {
-  background: rgba(255, 255, 255, 0.3); /* Nền mờ nhẹ cho số đếm */
+  background: rgba(255, 255, 255, 0.3);
+  /* Nền mờ nhẹ cho số đếm */
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -82,13 +98,15 @@
   background: #ffffff;
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0; /* Viền mỏng thay vì shadow đậm */
+  border: 1px solid #e2e8f0;
+  /* Viền mỏng thay vì shadow đậm */
   cursor: grab;
   transition: border-color 0.2s;
 }
 
 .kanban-card:hover {
-  border-color: #3b82f6; /* Hover đổi màu viền tinh tế */
+  border-color: #3b82f6;
+  /* Hover đổi màu viền tinh tế */
 }
 
 /* Cấu trúc bên trong Card bám sát mẫu */
@@ -106,9 +124,21 @@
   font-weight: 600;
   text-transform: uppercase;
 }
-.priority-badge.High { background: #fee2e2; color: #ef4444; }
-.priority-badge.Medium { background: #fef3c7; color: #d97706; }
-.priority-badge.Low { background: #dcfce3; color: #10b981; }
+
+.priority-badge.High {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.priority-badge.Medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.priority-badge.Low {
+  background: #dcfce3;
+  color: #10b981;
+}
 
 .card-title {
   font-size: 0.95rem;
@@ -124,6 +154,7 @@
   margin-bottom: 16px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -140,7 +171,32 @@
   gap: 6px;
   font-size: 0.8rem;
   color: #64748b;
-  background: #f1f5f9; /* Box màu xám bọc ngày tháng */
+  background: #f1f5f9;
+  /* Box màu xám bọc ngày tháng */
   padding: 4px 8px;
   border-radius: 6px;
+}
+
+.inline-date-input-kanban {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: 500;
+  width: 105px;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+}
+
+.inline-date-input-kanban:hover {
+  color: #3b82f6;
+}
+
+.inline-date-input-kanban:focus {
+  color: #3b82f6;
+  background: white;
+  border-radius: 4px;
+  padding: 0 4px;
 }
