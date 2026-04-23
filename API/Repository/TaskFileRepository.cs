@@ -34,7 +34,9 @@ namespace API.Repository
 
         public async Task<List<TaskAttachment>> GetFilesAsync(int taskId, int userId, CancellationToken ct)
         {
-            return await _context.TaskAttachments.Where(a => a.TaskId == taskId && a.Task.UserId == userId).ToListAsync(ct);
+            return await _context.TaskAttachments
+                .Where(a => a.TaskId == taskId && a.Task.UserId == userId).ToListAsync(ct);
+
         }
 
         public async Task<Entities.Task?> GetTaskAsync(int taskId, int userId, CancellationToken ct)

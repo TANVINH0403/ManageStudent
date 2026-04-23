@@ -36,14 +36,10 @@ namespace API.Controllers
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
 
-            await _uploadFile.UploadFilesAsync(new Dtos.File.UploadFileRequest
-            {
-                TaskId = taskId,
-                UserId = userId,
-                Files = files
-            }, ct);
+            await _uploadFile.UploadFilesAsync(taskId, userId, files, ct);
             return Ok(new { Message = "Files uploaded successfully" });
         }
+
 
         [HttpDelete("files/{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)

@@ -16,9 +16,9 @@ namespace API.Service.FileService
         {
             var files = await _repo.GetFilesAsync(taskId, userId, ct);
 
-            if(files == null)
+            if (files.Any())
             {
-                throw new Exception("Files not found");
+                return new List<AttachmentDto>();
             }
 
             return files.Select(f => new AttachmentDto

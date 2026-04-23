@@ -1,20 +1,18 @@
-using API.Dtos.Task;
 using API.Interfaces;
 using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
 using API.Service.DashboardService;
 using API.Service.FileService;
+using API.Service.FileService.SubabaseService;
 using API.Service.TagService;
 using API.Service.TaskService;
 using API.Service.UserService;
 using API.UnitOfWork;
 using API.Validator;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Formatters.Xml;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-
 namespace API.Dependency
 {
     public static class DependencyInjection
@@ -77,6 +75,13 @@ namespace API.Dependency
             services.AddScoped<GetProfileService>();
             services.AddScoped<UpdateProfileService>();
             services.AddScoped<ChangePasswordService>();
+
+            services.AddScoped<IFileService, SupabaseFileService>();
+
+            services.AddValidatorsFromAssemblyContaining<UploadFilesValidator>();
+
+            //services.AddValidatorsFromAssemblyContaining<UploadFilesValidator>(ServiceLifetime.Scoped);
+
 
 
             services.AddCors(options =>

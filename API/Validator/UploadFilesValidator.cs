@@ -17,6 +17,9 @@ namespace API.Validator
                 var ext = Path.GetExtension(file.FileName).ToLower();
                 return allowed.Contains(ext);
             }).WithMessage("Invalid file type");
+
+            RuleForEach(x => x.Files).Must(file => file.Length <= 5 * 1024 * 1024)
+                .WithMessage("File size must be less than 5MB");
         }
     }
 }

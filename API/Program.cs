@@ -1,5 +1,6 @@
 using API.Data;
 using API.Dependency;
+using API.Validator;
 using Microsoft.EntityFrameworkCore;
 
 namespace API
