@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import '../Login/auth.css';
+import './auth.css';
 
 // Kiểm tra độ mạnh mật khẩu
 const getPasswordStrength = (pwd) => {
