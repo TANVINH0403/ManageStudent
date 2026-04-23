@@ -3,18 +3,20 @@ using Microsoft.AspNetCore.Routing.Constraints;
 
 namespace API.Service.FileService
 {
-    public class DeleteFileHandler
+    public class DeleteFileHandler 
     {
         private readonly ITaskFileRepository _repo;
+        private readonly IFileService _fileService;
         private readonly IWebHostEnvironment _env;
 
-        public DeleteFileHandler(ITaskFileRepository repo, IWebHostEnvironment env)
+        public DeleteFileHandler(ITaskFileRepository repo, IWebHostEnvironment env, IFileService fileService)
         {
             _repo = repo;
             _env = env;
+            _fileService = fileService;
         }
 
-        public async Task DeleteFileAsync(int fileId, int userId, CancellationToken ct) 
+        public async Task DeleteFileAsync(int fileId, int userId, CancellationToken ct)
         {
             // 1. Tìm file và kiểm tra quyền sở hữu
             var file = await _repo.GetAttachmentAsync(fileId, userId, ct);
@@ -24,23 +26,20 @@ namespace API.Service.FileService
                 throw new Exception("File not found or access denied.");
             }
 
-            // 2. Xác định đường dẫn vật lý và xóa file trên đĩa
-            var rootPath = _env.WebRootPath ?? _env.ContentRootPath;
-
-            // Đảm bảo đường dẫn file được kết hợp đúng cách
-            var relativePath = file.FilePath.TrimStart('/');
-            var fullPath = Path.Combine(rootPath, relativePath);
-
-            if (File.Exists(fullPath))
+            try
             {
-                File.Delete(fullPath);
+
+                await _fileService.DeleteAsync(file.FilePath, ct);
+
+                // 3. XÓA RECORD TRONG DATABASE
+                _repo.RemoveAttachment(file); 
+                // 4. Lưu thay đổi
+                await _repo.SaveChangesAsync(ct);
             }
-
-            // 3. XÓA RECORD TRONG DATABASE (Quan trọng)
-            _repo.RemoveAttachment(file); // Giả sử bạn có hàm Remove trong Repository
-
-            // 4. Lưu thay đổi
-            await _repo.SaveChangesAsync(ct);
+            catch (Exception ex)
+            {
+                throw new Exception("Error deleting file: " + ex.Message);
+            }
         }
     }
 }

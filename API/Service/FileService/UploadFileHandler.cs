@@ -1,6 +1,9 @@
 ﻿using API.Dtos.File;
 using API.Entities;
 using API.Interfaces;
+using API.Validator;
+using FluentValidation;
+using System.Threading.Tasks;
 
 namespace API.Service.FileService
 {
@@ -8,93 +11,84 @@ namespace API.Service.FileService
     {
         private readonly ITaskFileRepository _repo;
         private readonly IWebHostEnvironment _env;
+        private readonly IFileService _fileService;
+        private readonly IValidator<UploadFileRequest> _validator;
         private readonly ILogger<UploadFileHandler> _logger;
 
-        public UploadFileHandler(ITaskFileRepository fileRepository, IWebHostEnvironment env, ILogger<UploadFileHandler> logger)
+        public UploadFileHandler(ITaskFileRepository fileRepository, IWebHostEnvironment env, ILogger<UploadFileHandler> logger, IFileService fileService, IValidator<UploadFileRequest> validator)
         {
             _repo = fileRepository;
             _env = env;
             _logger = logger;
+            _fileService = fileService;
+            _validator = validator;
         }
 
-        public async System.Threading.Tasks.Task UploadFilesAsync(UploadFileRequest request, CancellationToken ct)
+        public async System.Threading.Tasks.Task UploadFilesAsync(int taskId, int userId, List<IFormFile> files, CancellationToken ct)
         {
-            var task = await _repo.GetTaskAsync(request.TaskId, request.UserId, ct);
+
+            var request = new UploadFileRequest
+            {
+                TaskId = taskId,
+                UserId = userId,
+                Files = files
+            };
+
+            var result = await _validator.ValidateAsync(request, ct);
+            if (!result.IsValid)
+            {
+                var errors = result.Errors.Select(e => e.ErrorMessage);
+                throw new Exception(string.Join(", ", errors));
+            }
+
+            var task = await _repo.GetTaskAsync(taskId, userId, ct);
             if (task == null)
             {
                 throw new Exception("Task not found or access denied.");
             }
 
-            var rootPath = _env.WebRootPath ?? _env.ContentRootPath;
-            var folder = Path.Combine(rootPath, "uploads");
-
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-
             await using var transaction = await _repo.BeginTransactionAsync(ct);
 
-            var saveFile = new List<string>();
+            var uploadedUrls = new List<string>();
 
             try
             {
+                var attachments = new List<TaskAttachment>();
 
-                var semophore = new SemaphoreSlim(5); // Limit to 5 concurrent uploads
-                var uploadTasks = request.Files.Select(async file =>
+                foreach (var file in files)
                 {
-                    await semophore.WaitAsync(ct);
-                    try
+                    var url = await _fileService.UploadAsync(file, ct);
+
+                    uploadedUrls.Add(url);
+
+                    attachments.Add(new TaskAttachment
                     {
-                        ct.ThrowIfCancellationRequested();
+                        TaskId = taskId,
+                        FileName = file.FileName,
+                        FilePath = url
+                    });
+                }
 
-                        if (file.Length > 5 * 1024 * 1024)
-                        {
-                            throw new Exception($"File {file.FileName} to lagre.");
-                        }
-
-
-                        var ext = Path.GetExtension(file.FileName);
-
-                        var fileName = Guid.NewGuid() + ext;
-                        var path = Path.Combine(folder, fileName);
-
-                        await using var stream = new FileStream(path, FileMode.Create);
-
-                        await file.CopyToAsync(stream, ct);
-
-                        return new TaskAttachment
-                        {
-                           TaskId = request.TaskId,
-                           FileName = file.FileName,
-                           FilePath = $"/uploads/{fileName}",
-                        };
-
-                    }
-                    finally
-                    {
-                        semophore.Release();
-                    }
-                });
-
-                var attachments = await System.Threading.Tasks.Task.WhenAll(uploadTasks);
-                await _repo.AddAttachmentsAsync(attachments.ToList(), ct);
+                await _repo.AddAttachmentsAsync(attachments, ct);
                 await _repo.SaveChangesAsync(ct);
+
                 await transaction.CommitAsync(ct);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Uploading files Failed");
+                _logger.LogError(ex, "Upload failed");
+
                 await transaction.RollbackAsync(ct);
-                foreach (var file in saveFile)
+
+                // rollback file trên Supabase
+                foreach (var url in uploadedUrls)
                 {
-                    if (File.Exists(file))
-                    {
-                        File.Delete(file);
-                    }
+                    await _fileService.DeleteAsync(url, ct);
                 }
+
                 throw;
             }
+
         }
     }
 }
