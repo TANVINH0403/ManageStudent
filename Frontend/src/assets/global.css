@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #3378ff;
+  --bg-main: #f0f4f9;
+  --sidebar-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-light: #64748b;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  height: 100vh;
+  overflow: hidden; /* Không cho scroll cả trang, chỉ scroll nội dung */
+}
+
+#root {
+  height: 100%;
+}

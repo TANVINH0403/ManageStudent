@@ -1,0 +1,82 @@
+:root {
+  /* HỆ MÀU CHÍNH THỨC - Sửa ở đây là toàn bộ Web tự đổi màu */
+  --sales-primary: #818cf8;
+  --sales-primary-light: #e0e7ff;
+  --sales-bg: #f3f4f9;
+  --sales-card-bg: #ffffff;
+  --sales-text-main: #1f2937;
+  --sales-text-muted: #6b7280;
+  --sales-text-light: #9ca3af;
+  --sales-red: #f87171;
+  --sales-green: #34d399;
+  --sales-border: #f1f5f9;
+  --sales-radius: 12px;
+}
+
+.sales-dashboard-wrapper {
+  background-color: var(--sales-bg) !important;
+  padding: 16px 24px; display: flex; flex-direction: column; gap: 24px; min-height: 100%;
+  font-family: 'Inter', system-ui, sans-serif !important; color: var(--sales-text-main) !important;
+}
+
+.sales-dashboard-wrapper .dashboard-topbar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+.sales-dashboard-wrapper .title-area h2 { font-size: 1.5rem !important; font-weight: 700 !important; margin: 0 0 4px 0 !important; color: var(--sales-text-main); }
+.sales-dashboard-wrapper .subtitle-date { font-size: 0.9rem; color: var(--sales-text-light); font-weight: 500; }
+
+.sales-dashboard-wrapper .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.sales-dashboard-wrapper .kpi-card {
+  background: var(--sales-card-bg); border-radius: var(--sales-radius); padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border: 1px solid var(--sales-border); min-height: 110px;
+}
+
+.sales-dashboard-wrapper .kpi-info { display: flex; flex-direction: column; gap: 6px; width: 65%; }
+.sales-dashboard-wrapper .kpi-label { font-size: 0.85rem !important; font-weight: 600 !important; color: var(--sales-text-muted); }
+.sales-dashboard-wrapper .kpi-value { font-size: 1.8rem !important; font-weight: 700 !important; color: var(--sales-text-main); margin: 4px 0; }
+.sales-dashboard-wrapper .kpi-change { font-size: 0.75rem !important; font-weight: 700 !important; display: flex; align-items: center; gap: 4px; }
+.sales-dashboard-wrapper .kpi-change.negative { color: var(--sales-red); }
+.sales-dashboard-wrapper .kpi-change.positive { color: var(--sales-green); }
+.sales-dashboard-wrapper .kpi-chart { width: 35%; height: 50px; margin-top: 10px; }
+
+.sales-dashboard-wrapper .charts-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.sales-dashboard-wrapper .chart-card {
+  background: var(--sales-card-bg); border-radius: var(--sales-radius); padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid var(--sales-border); display: flex; flex-direction: column;
+}
+
+.sales-dashboard-wrapper .chart-title { font-size: 1rem !important; font-weight: 700 !important; color: var(--sales-text-main); margin: 0 0 12px 0 !important; }
+.sales-dashboard-wrapper .chart-legend-custom { display: flex; gap: 16px; font-size: 0.8rem; color: var(--sales-text-muted); font-weight: 500; margin-bottom: 20px; }
+
+/* --- QUẢN LÝ CÁC DẤU CHẤM MÀU (Tách biệt khỏi JSX) --- */
+.sales-dashboard-wrapper .chart-legend-custom .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.bg-primary-dot { background-color: var(--sales-primary); }
+.bg-gray-dot { background-color: var(--sales-text-light); }
+.bg-dark-dot { background-color: var(--sales-text-main); }
+
+.sales-dashboard-wrapper .chart-wrapper-h200 { height: 220px; width: 100%; }
+
+.sales-dashboard-wrapper .charts-row-bottom { display: grid; grid-template-columns: 1.2fr 2fr; gap: 20px; }
+.sales-dashboard-wrapper .chart-wrapper-h250 { height: 280px; width: 100%; }
+
+.sales-dashboard-wrapper .table-responsive { width: 100%; overflow-x: auto; margin-top: 12px; }
+.sales-dashboard-wrapper .student-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.sales-dashboard-wrapper .student-table th { text-align: left; padding: 12px 10px; color: var(--sales-text-muted); font-weight: 600; border-bottom: 1px solid var(--sales-border); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+.sales-dashboard-wrapper .student-table td { padding: 14px 10px; color: var(--sales-text-main); border-bottom: 1px solid #f9fafb; }
+.align-right { text-align: right !important; }
+
+.status-badge-custom { padding: 6px 12px; border-radius: 4px; font-weight: 600; display: inline-block; font-size: 0.8rem; }
+.bg-purple { background: #eef2ff; color: #4f46e5; }
+.bg-red { background: #fef2f2; color: #ef4444; }
+
+.sales-dashboard-wrapper .clickable { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.sales-dashboard-wrapper .clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(129, 140, 248, 0.1) !important; }
+.sales-dashboard-wrapper .clickable-row:hover { background-color: #f8fafc; cursor: pointer; }
+.card-header-with-link { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.btn-view-all { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 0.8rem; font-weight: 600; color: var(--sales-primary); cursor: pointer; }
+.btn-view-all:hover { color: #4f46e5; }
+.text-gray { color: var(--sales-text-muted); }
+.text-red { color: var(--sales-red) !important; }
+.fw-600 { font-weight: 600; }
+.recharts-tooltip-cursor { fill: transparent; stroke: #e5e7eb; stroke-width: 1; stroke-dasharray: 4 4; }
