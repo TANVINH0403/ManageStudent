@@ -1,4 +1,4 @@
-﻿using API.Dtos.Attachment;
+    using API.Dtos.Attachment;
 using API.Interfaces;
 
 namespace API.Service.FileService
@@ -16,7 +16,7 @@ namespace API.Service.FileService
         {
             var files = await _repo.GetFilesAsync(taskId, userId, ct);
 
-            if (files.Any())
+            if (!files.Any())
             {
                 return new List<AttachmentDto>();
             }

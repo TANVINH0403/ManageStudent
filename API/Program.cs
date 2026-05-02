@@ -29,6 +29,7 @@ namespace API
             builder.Services.AddApplicationServices();
             builder.Services.AddJwtAuthDenpendency(builder.Configuration);
 
+            builder.Services.AddSignalR();
 
             var app = builder.Build();
             // Configure the HTTP request pipeline.
@@ -38,6 +39,7 @@ namespace API
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+            app.MapHub<NotificationHub>("/hubs/notifications");
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("AllowFrontend");
