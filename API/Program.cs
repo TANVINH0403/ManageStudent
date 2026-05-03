@@ -39,12 +39,12 @@ namespace API
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.MapHub<NotificationHub>("/hubs/notifications");
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("AllowFrontend");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapControllers();
             app.Run();
         }

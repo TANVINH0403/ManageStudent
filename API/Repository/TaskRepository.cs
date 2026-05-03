@@ -32,6 +32,7 @@ namespace API.Repository
         {
             return await _context.Tasks
                 .Include(t => t.Category)
+                .AsSplitQuery()
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
         }
@@ -48,6 +49,7 @@ namespace API.Repository
                 .Include(x => x.TaskTags)
                     .ThenInclude(xx => xx.Tag)
                 .Include(t => t.Category)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.TaskId == taskId && t.UserId == userId);
         }
 
@@ -65,6 +67,7 @@ namespace API.Repository
                 .Include(x => x.TaskTags)
                 .ThenInclude(xx => xx.Tag)
                 .Where(t => t.UserId == userId)
+                .AsSplitQuery()
                 .AsQueryable();
         }
 
@@ -73,6 +76,7 @@ namespace API.Repository
             return await _context.Tasks
                 .Include(t => t.Category)
                 .Where(t => t.ParentId == parentId && t.UserId == userId)
+                .AsSplitQuery()
                 .ToListAsync();
         }
 
@@ -87,6 +91,7 @@ namespace API.Repository
         {
             return _context.Tasks
                 .Include(x => x.Category)
+                .AsSplitQuery()
                 .Where(x => x.UserId == userId 
                 //|| (x.Category != null && x.Category.Visibility == Visibility.Public)
                 );
