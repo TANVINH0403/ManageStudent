@@ -16,7 +16,8 @@ namespace API.Entities
         public DateTime? UpdatedAt { get; set; }
         public int UserId { get; set; }
         public User User { get; set; }
-
+        public DateTime? LastNotifiedAt { get; set; }
+        public bool IsDueSoonNotified { get; set; } = false;
         public int? ParentId { get; set; }
         public Task ParentTask { get; set; }
         public int? CategoryId { get; set; }

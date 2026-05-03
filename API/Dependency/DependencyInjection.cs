@@ -5,6 +5,7 @@ using API.Service.CategoryService;
 using API.Service.DashboardService;
 using API.Service.FileService;
 using API.Service.FileService.SubabaseService;
+using API.Service.NotificationService;
 using API.Service.TagService;
 using API.Service.TaskService;
 using API.Service.UserService;
@@ -79,6 +80,11 @@ namespace API.Dependency
             services.AddScoped<IFileService, SupabaseFileService>();
 
             services.AddValidatorsFromAssemblyContaining<UploadFilesValidator>();
+
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<NotificationHandler>();
+            services.AddHostedService<DueTaskReminderService>();
+            //services.AddScoped<NotificationHandler>();
 
             //services.AddValidatorsFromAssemblyContaining<UploadFilesValidator>(ServiceLifetime.Scoped);
 
