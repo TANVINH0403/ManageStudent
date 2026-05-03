@@ -29,6 +29,7 @@ namespace API.Repository
         {
             return await _context.TaskAttachments
                 .Include(a => a.Task)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(a => a.Id == id && a.Task.UserId == userId, ct);
         }
 

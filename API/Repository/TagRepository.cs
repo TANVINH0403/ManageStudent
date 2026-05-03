@@ -46,6 +46,7 @@ namespace API.Repository
         {
             return await _context.Tags
                 .Include(t => t.TaskTags)
+                .AsSingleQuery()
                 .FirstOrDefaultAsync(t => t.TagId == tagId);
         }
 

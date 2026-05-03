@@ -1,4 +1,4 @@
-﻿
+
 using API.Data;
 using API.Entities;
 using API.Enum;
@@ -32,7 +32,7 @@ namespace API.Service.NotificationService
                     .Where(t =>
                         t.DueDate != null &&
                         t.Status != Enum.TaskStatus.Completed &&
-                        t.DueDate <= now.AddDays(1) &&
+                        t.DueDate <= now.AddDays(2) &&
                         t.DueDate > now
                     )
                     .ToListAsync();
