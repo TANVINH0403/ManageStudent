@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, X, Calendar, Flag, AlignLeft,
   Tag, RefreshCw, LayoutGrid, List, FolderOpen, ChevronDown,
   ArrowUp, Clock, CheckCircle2, AlertCircle,
-  Database, BookOpen, Code2, Zap, Layers
+  Database, BookOpen, Code2, Zap, Layers, MessageSquare, Send
 } from 'lucide-react';
 import './Tasks.css';
 
@@ -129,6 +129,7 @@ const Tasks = () => {
   const [viewMode, setViewMode]            = useState('list');
   const [openMenuId, setOpenMenuId]        = useState(null);
   const [showCreate, setShowCreate]        = useState(false);
+  const [newNote, setNewNote]              = useState('');
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -193,6 +194,22 @@ const Tasks = () => {
     setActiveTask(editTask);
   };
 
+  const handleAddNote = () => {
+    if (!newNote.trim() || !editTask) return;
+    const note = {
+      time: new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
+      text: newNote.trim()
+    };
+    
+    const updatedTask = {
+      ...editTask,
+      notes: [...(editTask.notes || []), note]
+    };
+    setEditTask(updatedTask);
+    dispatch(updateTask(updatedTask));
+    setNewNote('');
+  };
+
   const handleCreateTask = (newTask) => {
     dispatch(addTask(newTask));
   };
@@ -202,7 +219,7 @@ const Tasks = () => {
     setStatusFilter('All'); setPriorityFilter('All'); setCurrentPage(1);
   };
 
-  const openDetail = (task) => { setActiveTask(task); setEditTask({ ...task }); };
+  const openDetail = (task) => { setActiveTask(task); setEditTask({ ...task }); setNewNote(''); };
   const changePage = (p) => setCurrentPage(Math.max(1, Math.min(totalPages, p)));
 
   return (
@@ -507,12 +524,39 @@ const Tasks = () => {
                     style={{ width: `${editTask.progress ?? 0}%`, background: (editTask.progress ?? 0) === 100 ? '#16a34a' : '#7c3aed' }} />
                 </div>
               </div>
-              <div className="detail-group desc-group">
-                <div className="desc-header"><AlignLeft size={15} /><h3>Description</h3></div>
-                <textarea className="detail-desc-input" rows="4"
-                  value={editTask.description ?? ''}
-                  onChange={e => setEditTask({ ...editTask, description: e.target.value })}
-                  placeholder="Thêm mô tả..." />
+              <div className="detail-group notes-group">
+                <div className="desc-header"><AlignLeft size={15} /><h3>Ghi chú</h3></div>
+                
+                <div className="notes-list">
+                  {(editTask.notes || []).length > 0 ? (
+                    editTask.notes.map((note, idx) => (
+                      <div className="note-item" key={idx}>
+                        <div className="note-bullet"></div>
+                        <div className="note-content">
+                          <span className="note-time">{note.time}</span>
+                          <div className="note-text">{note.text}</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-notes">Chưa có ghi chú nào.</div>
+                  )}
+                </div>
+
+                <div className="note-input-area">
+                  <input 
+                    type="text" 
+                    placeholder="Thêm ghi chú..." 
+                    value={newNote}
+                    onChange={e => setNewNote(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleAddNote();
+                    }}
+                  />
+                  <button className="btn-send" onClick={handleAddNote} disabled={!newNote.trim()}>
+                    <Send size={16} />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="panel-footer">

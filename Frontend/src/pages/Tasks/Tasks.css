@@ -384,12 +384,52 @@
 .detail-group { display: flex; flex-direction: column; gap: 8px; }
 .desc-header { display: flex; align-items: center; gap: 8px; color: #1e293b; margin-bottom: 2px; }
 .desc-header h3 { font-size: 0.95rem; font-weight: 600; margin: 0; }
-.detail-desc-input {
-  width: 100%; padding: 13px; border: 1px solid #e2e8f0; border-radius: 10px;
-  resize: vertical; font-family: inherit; font-size: 0.9rem;
-  line-height: 1.6; outline: none; box-sizing: border-box; color: #334155;
+.notes-list {
+  display: flex; flex-direction: column; gap: 0;
+  max-height: 250px; overflow-y: auto; padding-right: 4px;
+  padding-left: 6px;
 }
-.detail-desc-input:focus { border-color: #7c3aed; }
+.note-item {
+  display: flex; gap: 14px;
+  position: relative;
+  padding-bottom: 16px;
+}
+.note-item:not(:last-child)::before {
+  content: '';
+  position: absolute; left: 4px; top: 10px; bottom: 0;
+  width: 2px; background: #e2e8f0;
+}
+.note-bullet {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #7c3aed; border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #e2e8f0;
+  margin-top: 4px; z-index: 1; flex-shrink: 0;
+}
+.note-content {
+  display: flex; flex-direction: column; gap: 4px; flex: 1;
+  background: #f8fafc; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid #f1f5f9;
+}
+.note-time { font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
+.note-text { font-size: 0.86rem; color: #334155; line-height: 1.45; }
+.no-notes { font-size: 0.85rem; color: #94a3b8; font-style: italic; text-align: center; padding: 10px; }
+
+.note-input-area {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px;
+}
+.note-input-area input {
+  flex: 1; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 20px;
+  font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+.note-input-area input:focus { border-color: #7c3aed; }
+.btn-send {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; background: #7c3aed; color: white;
+  border: none; border-radius: 50%; cursor: pointer; transition: background 0.2s;
+}
+.btn-send:disabled { background: #cbd5e1; cursor: not-allowed; }
+.btn-send:hover:not(:disabled) { background: #6d28d9; }
 .panel-footer {
   padding: 18px 28px; border-top: 1px solid #e2e8f0;
   display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc;

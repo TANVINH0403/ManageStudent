@@ -39,6 +39,12 @@ export const mockTasks = [
     status: 'Pending',
     description: 'Đăng ký vé tại nhà thi đấu.',
     progress: 10,
+    notes: [
+      {
+        time: '14:30 02/05/2026',
+        text: 'Đã hoàn tất đăng ký vé tham dự tại văn phòng khoa.'
+      }
+    ]
   },
   {
     id: 4,
