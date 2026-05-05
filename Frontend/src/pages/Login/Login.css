@@ -163,3 +163,19 @@
 }
 
 .register-link a:hover { text-decoration: underline; }
+
+.login-error {
+  display: flex; align-items: center; gap: 8px;
+  background: #fee2e2; border: 1px solid #fca5a5;
+  color: #dc2626; border-radius: 10px;
+  padding: 10px 14px; font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.login-success {
+  display: flex; align-items: center; gap: 8px;
+  background: #dcfce7; border: 1px solid #86efac;
+  color: #16a34a; border-radius: 10px;
+  padding: 10px 14px; font-size: 0.88rem;
+  margin-bottom: 16px;
+}
