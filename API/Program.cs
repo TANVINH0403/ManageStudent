@@ -23,8 +23,15 @@ namespace API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             
+            var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (dbProvider == "PostgreSQL")
+                    options.UseNpgsql(connStr);
+                else
+                    options.UseSqlServer(connStr);
+            });
 
             builder.Services.AddApplicationServices();
             builder.Services.AddJwtAuthDenpendency(builder.Configuration);
@@ -46,6 +53,16 @@ namespace API
             app.UseAuthorization();
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapControllers();
+
+            // PostgreSQL local: tạo schema từ model, bỏ qua migrations SQL Server
+            // PHẢI đặt TRƯỚC app.Run() để BackgroundService không query bảng chưa tạo
+            if (dbProvider == "PostgreSQL")
+            {
+                using var scope = app.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.Database.EnsureCreated();
+            }
+
             app.Run();
         }
     }

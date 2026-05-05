@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addCategory, updateCategory, deleteCategory } from '../../redux/categorySlice';
-import { addTask } from '../../redux/taskSlice';
+import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../../redux/categorySlice';
+import { createTask } from '../../redux/taskSlice';
 import {
   Edit2, Trash2, AlertCircle, Check, X, Plus,
   PlusCircle, Circle, CheckCircle2,
@@ -102,7 +102,7 @@ const Categories = () => {
   /* ── Quick-add task ── */
   const handleQuickAdd = (e) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
-      dispatch(addTask({
+      dispatch(createTask({
         id: Date.now(), title: newTaskTitle, description: '',
         categoryId: activeCategory.id, status: 'Pending', priority: 'Medium',
         progress: 0, deadline: new Date().toISOString().split('T')[0],

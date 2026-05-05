@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addTask, updateTask, deleteTask } from '../../redux/taskSlice';
+import {
+  fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes
+} from '../../redux/taskSlice';
+import { fetchCategories } from '../../redux/categorySlice';
 import {
   Search, Plus, MoreVertical, CheckSquare, Square,
   ChevronLeft, ChevronRight, X, Calendar, Flag, AlignLeft,
   Tag, RefreshCw, LayoutGrid, List, FolderOpen, ChevronDown,
-  ArrowUp, Clock, CheckCircle2, AlertCircle,
+  ArrowUp, Clock, CheckCircle2, AlertCircle, Loader2,
   Database, BookOpen, Code2, Zap, Layers, MessageSquare, Send
 } from 'lucide-react';
 import './Tasks.css';
@@ -114,23 +117,30 @@ const CreateTaskModal = ({ categories, onClose, onSave }) => {
 // ── Main Component ──────────────────────────────────────────────────────────
 const Tasks = () => {
   const dispatch = useDispatch();
-  // ← Lấy dữ liệu từ Redux Store (dùng chung với Kanban, Calendar, Categories)
-  const tasks      = useSelector(s => s.tasks.items);
-  const categories = useSelector(s => s.categories.items);
+  const tasks        = useSelector(s => s.tasks.items);
+  const taskStatus   = useSelector(s => s.tasks.status);
+  const categories   = useSelector(s => s.categories.items);
 
-  const [searchTerm, setSearchTerm]       = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [statusFilter, setStatusFilter]    = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
-  const [selectedTasks, setSelectedTasks]  = useState([]);
-  const [activeTask, setActiveTask]        = useState(null);
-  const [editTask, setEditTask]            = useState(null);
-  const [currentPage, setCurrentPage]      = useState(1);
-  const [viewMode, setViewMode]            = useState('list');
-  const [openMenuId, setOpenMenuId]        = useState(null);
-  const [showCreate, setShowCreate]        = useState(false);
-  const [newNote, setNewNote]              = useState('');
+  const [searchTerm, setSearchTerm]         = useState('');
+  const [categoryFilter, setCategoryFilter]  = useState('All');
+  const [statusFilter, setStatusFilter]      = useState('All');
+  const [priorityFilter, setPriorityFilter]  = useState('All');
+  const [selectedTasks, setSelectedTasks]    = useState([]);
+  const [activeTask, setActiveTask]          = useState(null);
+  const [editTask, setEditTask]              = useState(null);
+  const [currentPage, setCurrentPage]        = useState(1);
+  const [viewMode, setViewMode]              = useState('list');
+  const [openMenuId, setOpenMenuId]          = useState(null);
+  const [showCreate, setShowCreate]          = useState(false);
+  const [newNote, setNewNote]                = useState('');
+  const [saving, setSaving]                  = useState(false);
   const menuRef = useRef(null);
+
+  // Fetch tasks & categories từ API khi component mount
+  useEffect(() => {
+    dispatch(fetchTasks());
+    if (categories.length === 0) dispatch(fetchCategories());
+  }, [dispatch]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -188,10 +198,12 @@ const Tasks = () => {
     if (activeTask?.id === id) setActiveTask(null);
   };
 
-  const handleSaveDetail = () => {
+  const handleSaveDetail = async () => {
     if (!editTask) return;
-    dispatch(updateTask(editTask));
+    setSaving(true);
+    await dispatch(updateTask({ id: editTask.id, data: editTask }));
     setActiveTask(editTask);
+    setSaving(false);
   };
 
   const handleAddNote = () => {
@@ -200,18 +212,16 @@ const Tasks = () => {
       time: new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }),
       text: newNote.trim()
     };
-    
-    const updatedTask = {
-      ...editTask,
-      notes: [...(editTask.notes || []), note]
-    };
+    const updatedNotes = [...(editTask.notes || []), note];
+    const updatedTask  = { ...editTask, notes: updatedNotes };
     setEditTask(updatedTask);
-    dispatch(updateTask(updatedTask));
+    // Notes lưu local (chưa có API riêng)
+    dispatch(updateTaskNotes({ id: editTask.id, notes: updatedNotes }));
     setNewNote('');
   };
 
   const handleCreateTask = (newTask) => {
-    dispatch(addTask(newTask));
+    dispatch(createTask(newTask));
   };
 
   const clearFilters = () => {

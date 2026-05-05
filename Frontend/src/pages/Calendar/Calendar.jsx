@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addTask } from '../../redux/taskSlice';
+import { createTask } from '../../redux/taskSlice';
 import {
   ChevronLeft, ChevronRight, Plus, X,
   Filter, MoreHorizontal, CalendarDays
@@ -88,11 +88,10 @@ const Calendar = () => {
   const handleQuickAdd = (e) => {
     if (e.key === 'Enter' && quickTitle.trim() && selectedDay) {
       const pad = (n) => String(n).padStart(2, '0');
-      dispatch(addTask({
-        id: Date.now(),
+      dispatch(createTask({
         title: quickTitle,
         description: '',
-        categoryId: categories[0]?.id ?? 1,
+        categoryId: categories[0]?.id ?? null,
         priority: 'Medium',
         status: 'Pending',
         progress: 0,
@@ -106,11 +105,10 @@ const Calendar = () => {
   const handleModalSubmit = (e) => {
     e.preventDefault();
     if (!modalForm.title.trim() || !modalForm.deadline) return;
-    dispatch(addTask({
-      id: Date.now(),
+    dispatch(createTask({
       title: modalForm.title,
       description: '',
-      categoryId: Number(modalForm.categoryId) || (categories[0]?.id ?? 1),
+      categoryId: Number(modalForm.categoryId) || (categories[0]?.id ?? null),
       priority: modalForm.priority,
       status: 'Pending',
       progress: 0,
