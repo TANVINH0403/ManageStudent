@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateTaskStatus, createTask, deleteTask } from '../../redux/taskSlice';
+import { updateTaskStatus, createTask, deleteTask, fetchTasks } from '../../redux/taskSlice';
+import { fetchCategories } from '../../redux/categorySlice';
 import {
   Plus, MoreHorizontal, Calendar, Clock, CheckCircle2, X,
   Filter, LayoutGrid, List, Settings2, Hash,
@@ -88,9 +89,14 @@ const Kanban = () => {
   const [dragging, setDragging]         = useState(null);
   const [dragOver, setDragOver]         = useState(null);
   const [showCreate, setShowCreate]     = useState(false);
-  const [quickAddCol, setQuickAddCol]   = useState(null);   // column id showing inline form
+  const [quickAddCol, setQuickAddCol]   = useState(null);
   const [openMenuId, setOpenMenuId]     = useState(null);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    dispatch(fetchTasks());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const getTasksByStatus = (status) => tasks.filter(t => t.status === status);
 

@@ -17,8 +17,10 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     authApi.getMe()
-      .then((data) => {
-        setUser(data);
+      .then((res) => {
+        // BE trả về { success, data: { username, ... }, message }
+        const user = res.data ?? res;
+        setUser(user);
       })
       .catch(() => {
         // token expired / invalid → clear storage
@@ -31,8 +33,9 @@ export const AuthProvider = ({ children }) => {
 
   // ── Login ────────────────────────────────────────────────────────────
   const login = useCallback(async (username, password) => {
-    const data = await authApi.login({ UserName: username, Password: password });
-    // data = { username, accessToken, refreshToken, accessTokenExpiry, success }
+    // BE trả về: { success: true, data: { username, accessToken, refreshToken, accessTokenExpiry }, message }
+    const res = await authApi.login({ UserName: username, Password: password });
+    const data = res.data ?? res; // unwrap nếu có wrapper
     localStorage.setItem('access_token', data.accessToken);
     localStorage.setItem('refresh_token', data.refreshToken);
     setToken(data.accessToken);
@@ -42,8 +45,9 @@ export const AuthProvider = ({ children }) => {
 
   // ── Register ─────────────────────────────────────────────────────────
   const register = useCallback(async (formData) => {
-    const data = await authApi.register(formData);
-    return data;
+    // BE trả về: { success: true, data: { ... }, message }
+    const res = await authApi.register(formData);
+    return res.data ?? res;
   }, []);
 
   // ── Logout ───────────────────────────────────────────────────────────

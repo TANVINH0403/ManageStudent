@@ -46,7 +46,7 @@ namespace API.Service.NotificationService
                             UserId = task.UserId,
                             TaskId = task.TaskId,
                             Type = NotificationType.DueSoon,
-                            Message = $"Task '{task.TaskName}' sắp hết hạn!"
+                            Message = $"Task '{task.TaskName}' is due soon!"
                         };
 
                         context.Notifications.Add(notification);

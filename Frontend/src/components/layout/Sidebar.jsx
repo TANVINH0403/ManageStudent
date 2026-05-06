@@ -37,18 +37,6 @@ const Sidebar = () => {
         {!collapsed && <h2 className="logo-text">Student<span>Manage</span></h2>}
       </div>
 
-      {/* User info */}
-      {!collapsed && user && (
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar">
-            {user.username?.[0]?.toUpperCase() ?? 'S'}
-          </div>
-          <div className="sidebar-user-info">
-            <span className="sidebar-user-name">{user.username}</span>
-            <span className="sidebar-user-role">Sinh viên</span>
-          </div>
-        </div>
-      )}
 
       {/* Nav */}
       <nav className="nav-list">

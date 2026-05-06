@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-  fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes
-} from '../../redux/taskSlice';
-import { fetchCategories } from '../../redux/categorySlice';
+import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes } from '../../redux/taskSlice';
+import { fetchCategories, createCategory } from '../../redux/categorySlice';
 import {
   Search, Plus, MoreVertical, CheckSquare, Square,
   ChevronLeft, ChevronRight, X, Calendar, Flag, AlignLeft,
@@ -35,19 +33,85 @@ const getDaysText = (deadline, status) => {
   return `${diff} ngày tới`;
 };
 
+// ── Quick Create Category (no nested form — uses div + keydown) ─────────────
+const QuickCategoryForm = ({ dispatch, onCreated, onCancel }) => {
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    const result = await dispatch(createCategory({ name: name.trim() }));
+    setSaving(false);
+    if (result.payload?.length > 0) {
+      const created = result.payload[result.payload.length - 1];
+      onCreated(created);
+    } else {
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="quick-cat-form">
+      <p className="quick-cat-label">Tạo danh mục mới</p>
+      <div className="quick-cat-row">
+        <input
+          autoFocus
+          type="text"
+          placeholder="Tên danh mục..."
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          className="quick-cat-input"
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          disabled={saving || !name.trim()}
+          onClick={handleSave}
+        >
+          {saving ? '...' : 'Tạo'}
+        </button>
+        <button type="button" className="btn-outline btn-sm" onClick={onCancel}>Hủy</button>
+      </div>
+    </div>
+  );
+};
+
 // ── Modal tạo Task mới ──────────────────────────────────────────────────────
-const CreateTaskModal = ({ categories, onClose, onSave }) => {
+const CreateTaskModal = ({ categories, dispatch, onClose, onSave }) => {
+  const [showQuickCat, setShowQuickCat] = useState(false);
+  const [localCategories, setLocalCategories] = useState(categories);
   const [form, setForm] = useState({
-    title: '', description: '', categoryId: categories[0]?.id || 1,
+    title: '', description: '',
+    categoryId: categories[0]?.id ?? '',
     deadline: new Date().toISOString().split('T')[0],
-    priority: 'Medium', status: 'Pending', progress: 0,
+    priority: 'Medium', status: 'Pending',
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Sync when redux categories update
+  useEffect(() => {
+    setLocalCategories(categories);
+    // If no category selected yet, pick first available
+    if (!form.categoryId && categories.length > 0) {
+      set('categoryId', categories[0].id);
+    }
+  }, [categories]);
+
+  const handleCategoryCreated = (newCat) => {
+    setShowQuickCat(false);
+    set('categoryId', newCat.id);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
-    onSave({ ...form, id: Date.now(), categoryId: Number(form.categoryId), progress: Number(form.progress) });
+    if (!form.categoryId) {
+      alert('Vui lòng chọn hoặc tạo danh mục trước khi tạo task.');
+      return;
+    }
+    onSave({ ...form, categoryId: Number(form.categoryId) });
     onClose();
   };
 
@@ -71,13 +135,32 @@ const CreateTaskModal = ({ categories, onClose, onSave }) => {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Danh mục</label>
-              <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)}>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <div className="label-with-action">
+                <label>Danh mục *</label>
+                <button type="button" className="btn-link-sm" onClick={() => setShowQuickCat(v => !v)}>
+                  <Plus size={12} /> Tạo mới
+                </button>
+              </div>
+              {localCategories.length === 0 ? (
+                <div className="cat-empty-hint">
+                  ⚠️ Chưa có danh mục. Tạo một danh mục để tiếp tục.
+                </div>
+              ) : (
+                <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} required>
+                  <option value="">-- Chọn danh mục --</option>
+                  {localCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              )}
+              {showQuickCat && (
+                <QuickCategoryForm
+                  dispatch={dispatch}
+                  onCreated={handleCategoryCreated}
+                  onCancel={() => setShowQuickCat(false)}
+                />
+              )}
             </div>
             <div className="form-group">
-              <label>Deadline</label>
+              <label>Deadline *</label>
               <input type="date" value={form.deadline} onChange={e => set('deadline', e.target.value)} required />
             </div>
           </div>
@@ -85,9 +168,9 @@ const CreateTaskModal = ({ categories, onClose, onSave }) => {
             <div className="form-group">
               <label>Mức ưu tiên</label>
               <select value={form.priority} onChange={e => set('priority', e.target.value)}>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <option value="High">🔴 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
               </select>
             </div>
             <div className="form-group">
@@ -99,14 +182,11 @@ const CreateTaskModal = ({ categories, onClose, onSave }) => {
               </select>
             </div>
           </div>
-          <div className="form-group">
-            <label>Tiến độ: {form.progress}%</label>
-            <input type="range" min="0" max="100" value={form.progress}
-              className="progress-slider" onChange={e => set('progress', e.target.value)} />
-          </div>
           <div className="modal-footer">
             <button type="button" className="btn-outline" onClick={onClose}>Hủy</button>
-            <button type="submit" className="btn-primary">Tạo công việc</button>
+            <button type="submit" className="btn-primary" disabled={!form.categoryId}>
+              Tạo công việc
+            </button>
           </div>
         </form>
       </div>
@@ -246,12 +326,12 @@ const Tasks = () => {
       {/* ── SUMMARY CARDS ── */}
       <div className="summary-cards">
         {[
-          { label: 'Tổng công việc',  value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed', trend: '↑ 8 so với tuần trước',  dir: 'up'   },
-          { label: 'Hoàn thành',      value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a', trend: '↑ 3 so với tuần trước',  dir: 'up'   },
-          { label: 'Đang thực hiện',  value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb', trend: '↑ 2 so với tuần trước',  dir: 'up'   },
-          { label: 'Đang chờ',        value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706', trend: '↓ 2 so với tuần trước',  dir: 'down' },
-          { label: 'Quá hạn',         value: summary.overdue,    Icon: AlertCircle,  bg: '#fee2e2', ic: '#dc2626', trend: '↓ 1 so với tuần trước',  dir: 'down' },
-        ].map(({ label, value, Icon, bg, ic, trend, dir }) => (
+          { label: 'Total Tasks',   value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed' },
+          { label: 'Completed',     value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a' },
+          { label: 'In Progress',   value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb' },
+          { label: 'Pending',       value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706' },
+          { label: 'Overdue',       value: summary.overdue,    Icon: AlertCircle,  bg: '#fee2e2', ic: '#dc2626' },
+        ].map(({ label, value, Icon, bg, ic }) => (
           <div className="summary-card" key={label}>
             <div className="card-icon-wrap" style={{ background: bg }}>
               <Icon size={22} color={ic} />
@@ -259,7 +339,6 @@ const Tasks = () => {
             <div className="card-body">
               <span className="card-label">{label}</span>
               <span className="card-value">{value}</span>
-              <span className={`card-trend ${dir}`}>{trend}</span>
             </div>
           </div>
         ))}
@@ -581,6 +660,7 @@ const Tasks = () => {
       {showCreate && (
         <CreateTaskModal
           categories={categories}
+          dispatch={dispatch}
           onClose={() => setShowCreate(false)}
           onSave={handleCreateTask}
         />

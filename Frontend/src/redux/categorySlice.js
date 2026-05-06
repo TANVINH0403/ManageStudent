@@ -64,7 +64,10 @@ export const updateCategory = createAsyncThunk(
         endDate:      data.endDate ?? null,
       };
       await categoryApi.update(id, payload);
-      return { id, ...data };
+      // Fetch full list to sync
+      const allRes = await categoryApi.getAll();
+      const items = Array.isArray(allRes) ? allRes : (allRes.items ?? allRes.data ?? []);
+      return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi cập nhật danh mục');
     }
@@ -109,11 +112,17 @@ const categorySlice = createSlice({
     builder
       .addCase(createCategory.fulfilled, (state, { payload }) => { state.items = payload; });
 
-    // updateCategory
+    // updateCategory — now returns full list
     builder
       .addCase(updateCategory.fulfilled, (state, { payload }) => {
-        const idx = state.items.findIndex(c => c.id === payload.id);
-        if (idx !== -1) state.items[idx] = { ...state.items[idx], ...payload };
+        // payload is now a full list
+        if (Array.isArray(payload)) {
+          state.items = payload;
+        } else {
+          // fallback: update single item
+          const idx = state.items.findIndex(c => c.id === payload.id);
+          if (idx !== -1) state.items[idx] = { ...state.items[idx], ...payload };
+        }
       });
 
     // deleteCategory
