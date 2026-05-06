@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateTaskStatus, addTask, deleteTask, updateTask } from '../../redux/taskSlice';
+import { updateTaskStatus, createTask, deleteTask, fetchTasks } from '../../redux/taskSlice';
+import { fetchCategories } from '../../redux/categorySlice';
 import {
   Plus, MoreHorizontal, Calendar, Clock, CheckCircle2, X,
   Filter, LayoutGrid, List, Settings2, Hash,
@@ -88,9 +89,14 @@ const Kanban = () => {
   const [dragging, setDragging]         = useState(null);
   const [dragOver, setDragOver]         = useState(null);
   const [showCreate, setShowCreate]     = useState(false);
-  const [quickAddCol, setQuickAddCol]   = useState(null);   // column id showing inline form
+  const [quickAddCol, setQuickAddCol]   = useState(null);
   const [openMenuId, setOpenMenuId]     = useState(null);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    dispatch(fetchTasks());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const getTasksByStatus = (status) => tasks.filter(t => t.status === status);
 
@@ -113,7 +119,7 @@ const Kanban = () => {
   const handleDrop = (e, newStatus) => {
     e.preventDefault();
     if (dragging && dragging.status !== newStatus) {
-      dispatch(updateTaskStatus({ id: dragging.id, newStatus }));
+      dispatch(updateTaskStatus({ id: dragging.id, status: newStatus }));
     }
     setDragging(null);
     setDragOver(null);
@@ -122,7 +128,7 @@ const Kanban = () => {
 
   /* ── Quick add ── */
   const handleQuickAdd = (task) => {
-    dispatch(addTask(task));
+    dispatch(createTask(task));
     setQuickAddCol(null);
   };
 
@@ -131,11 +137,10 @@ const Kanban = () => {
   const handleCreate = (e) => {
     e.preventDefault();
     if (!newTask.title.trim()) return;
-    dispatch(addTask({
-      id: Date.now(),
+    dispatch(createTask({
       title: newTask.title,
       description: newTask.description,
-      categoryId: Number(newTask.categoryId) || (categories[0]?.id ?? 1),
+      categoryId: Number(newTask.categoryId) || (categories[0]?.id ?? null),
       priority: newTask.priority,
       status: newTask.status,
       progress: 0,

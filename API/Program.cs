@@ -21,10 +21,35 @@ namespace API
                 });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c => {
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme {
+                    Name = "Authorization", Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer", BearerFormat = "JWT", In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "Enter: Bearer {your token}"
+                });
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement {{
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme { Reference = new Microsoft.OpenApi.Models.OpenApiReference {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }},
+                    Array.Empty<string>()
+                }});
+            });
+
             
+            var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+
+            // Fix: Npgsql requires UTC DateTime by default.
+            // This switch restores legacy behavior so DateTime.Now (Local) is accepted.
+            if (dbProvider == "PostgreSQL")
+                AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+                if (dbProvider == "PostgreSQL")
+                    options.UseNpgsql(connStr);
+                else
+                    options.UseSqlServer(connStr);
+            });
 
             builder.Services.AddApplicationServices();
             builder.Services.AddJwtAuthDenpendency(builder.Configuration);
@@ -34,11 +59,20 @@ namespace API
             var app = builder.Build();
             // Configure the HTTP request pipeline.
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
+            // Global exception handler: return JSON error details including inner exception
+            app.UseExceptionHandler(errApp => {
+                errApp.Run(async ctx => {
+                    ctx.Response.StatusCode = 500;
+                    ctx.Response.ContentType = "application/json";
+                    var feature = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                    var ex = feature?.Error;
+                    var msg = ex?.InnerException?.Message ?? ex?.Message ?? "Internal Server Error";
+                    await ctx.Response.WriteAsJsonAsync(new { message = msg, detail = ex?.ToString() });
+                });
+            });
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("AllowFrontend");
@@ -46,6 +80,16 @@ namespace API
             app.UseAuthorization();
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapControllers();
+
+            // PostgreSQL local: tạo schema từ model, bỏ qua migrations SQL Server
+            // PHẢI đặt TRƯỚC app.Run() để BackgroundService không query bảng chưa tạo
+            if (dbProvider == "PostgreSQL")
+            {
+                using var scope = app.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.Database.EnsureCreated();
+            }
+
             app.Run();
         }
     }

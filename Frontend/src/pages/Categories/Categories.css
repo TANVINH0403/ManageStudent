@@ -346,4 +346,13 @@
   text-align: center; padding: 28px 16px; color: #94a3b8;
   background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 10px;
   font-size: 0.86rem;
+}/* Form feedback message */
+.cfp-msg {
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-size: 0.86rem;
+  font-weight: 500;
 }
+.cfp-msg.success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.cfp-msg.error   { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.cfp-btn-submit:disabled { background: #a5b4fc; cursor: not-allowed; }

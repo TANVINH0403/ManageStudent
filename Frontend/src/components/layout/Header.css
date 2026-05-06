@@ -1,0 +1,130 @@
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  width: 340px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nd-header {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.nd-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.nd-unread-badge {
+  background: #ef4444;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.nd-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.nd-empty {
+  padding: 30px 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.nd-item {
+  display: flex;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.nd-item:hover {
+  background: #f8fafc;
+}
+
+.nd-item.unread {
+  background: #f0fdf4;
+}
+.nd-item.unread:hover {
+  background: #dcfce7;
+}
+
+.nd-item-icon {
+  background: white;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.nd-item-content {
+  flex: 1;
+}
+
+.nd-item-content p {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.nd-item-content span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.nd-unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+}
+
+.nd-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nd-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nd-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}

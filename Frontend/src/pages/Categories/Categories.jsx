@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addCategory, updateCategory, deleteCategory } from '../../redux/categorySlice';
-import { addTask } from '../../redux/taskSlice';
+import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../../redux/categorySlice';
+import { createTask } from '../../redux/taskSlice';
 import {
   Edit2, Trash2, AlertCircle, Check, X, Plus,
   PlusCircle, Circle, CheckCircle2,
@@ -60,6 +60,11 @@ const Categories = () => {
   const categories = useSelector(s => s.categories.items);
   const tasks      = useSelector(s => s.tasks.items);
 
+  // Fetch real data on mount
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
   const taskCountFor = (catId) => tasks.filter(t => t.categoryId === catId).length;
 
   /* Form state */
@@ -67,22 +72,41 @@ const Categories = () => {
   const [form, setForm]           = useState(defaultForm);
   const [isEditing, setIsEditing] = useState(false);
   const [showAllIcons, setShowAllIcons] = useState(false);
+  const [formMsg, setFormMsg]     = useState(null); // { type: 'success'|'error', text }
+  const [formSaving, setFormSaving] = useState(false);
 
   /* Side panel state */
   const [activeCategory, setActiveCategory] = useState(null);
   const [newTaskTitle, setNewTaskTitle]     = useState('');
 
   /* ── CRUD ── */
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    if (isEditing) {
-      dispatch(updateCategory({ id: form.id, name: form.name, color: form.color, iconKey: form.iconKey }));
-    } else {
-      dispatch(addCategory({ id: Date.now(), name: form.name, color: form.color, iconKey: form.iconKey }));
+    setFormSaving(true);
+    setFormMsg(null);
+    try {
+      let result;
+      if (isEditing) {
+        result = await dispatch(updateCategory({ id: form.id, data: { name: form.name, color: form.color, iconKey: form.iconKey } }));
+      } else {
+        result = await dispatch(createCategory({ name: form.name, color: form.color, iconKey: form.iconKey }));
+      }
+      // Check if action was rejected
+      if (result.type?.endsWith('/rejected')) {
+        setFormMsg({ type: 'error', text: result.payload ?? 'Có lỗi xảy ra. Vui lòng thử lại.' });
+      } else {
+        setFormMsg({ type: 'success', text: isEditing ? 'Cập nhật thành công!' : 'Tạo danh mục thành công!' });
+        setForm(defaultForm);
+        setIsEditing(false);
+        // Refresh list from server
+        dispatch(fetchCategories());
+        setTimeout(() => setFormMsg(null), 3000);
+      }
+    } catch (err) {
+      setFormMsg({ type: 'error', text: 'Lỗi kết nối. Kiểm tra lại API.' });
     }
-    setForm(defaultForm);
-    setIsEditing(false);
+    setFormSaving(false);
   };
 
   const handleEdit = (e, cat) => {
@@ -102,10 +126,12 @@ const Categories = () => {
   /* ── Quick-add task ── */
   const handleQuickAdd = (e) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
-      dispatch(addTask({
-        id: Date.now(), title: newTaskTitle, description: '',
-        categoryId: activeCategory.id, status: 'Pending', priority: 'Medium',
-        progress: 0, deadline: new Date().toISOString().split('T')[0],
+      dispatch(createTask({
+        title: newTaskTitle,
+        description: '',
+        categoryId: activeCategory.id,
+        priority: 'Medium',
+        deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       }));
       setNewTaskTitle('');
     }
@@ -211,13 +237,20 @@ const Categories = () => {
               </div>
             </div>
 
+            {/* Status message */}
+            {formMsg && (
+              <div className={`cfp-msg ${formMsg.type}`}>
+                {formMsg.type === 'success' ? '✅ ' : '❌ '}{formMsg.text}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="cfp-actions">
               {isEditing && (
                 <button type="button" className="cfp-btn-cancel" onClick={handleCancel}>Hủy</button>
               )}
-              <button type="submit" className="cfp-btn-submit">
-                {isEditing ? 'Cập nhật' : 'Tạo danh mục'}
+              <button type="submit" className="cfp-btn-submit" disabled={formSaving}>
+                {formSaving ? 'Đang lưu...' : (isEditing ? 'Cập nhật' : 'Tạo danh mục')}
               </button>
             </div>
           </form>
@@ -281,11 +314,6 @@ const Categories = () => {
               );
             })}
           </div>
-
-          {/* Add button at bottom */}
-          <button className="clp-add-btn" onClick={() => { setIsEditing(false); setForm(defaultForm); }}>
-            <Plus size={16} /> Thêm danh mục mới
-          </button>
         </div>
       </div>
 

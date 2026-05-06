@@ -3,12 +3,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ListTodo, KanbanSquare,
   CalendarDays, FolderKanban, GraduationCap,
-  Settings, User, ArrowRight, ChevronLeft, ChevronRight
+  Settings, User, ArrowRight, ChevronLeft, ChevronRight,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
   const location  = useLocation();
   const navigate  = useNavigate();
+  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
@@ -21,6 +24,11 @@ const Sidebar = () => {
     { path: '/settings',   label: 'Settings',          icon: <Settings size={20} /> },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <aside className={`sidebar-glass ${collapsed ? 'collapsed' : ''}`}>
       {/* Brand */}
@@ -28,6 +36,7 @@ const Sidebar = () => {
         <GraduationCap size={30} color="#a78bfa" style={{ flexShrink: 0 }} />
         {!collapsed && <h2 className="logo-text">Student<span>Manage</span></h2>}
       </div>
+
 
       {/* Nav */}
       <nav className="nav-list">
@@ -55,6 +64,16 @@ const Sidebar = () => {
           </button>
         </div>
       )}
+
+      {/* Logout button */}
+      <button
+        className="sidebar-logout-btn"
+        onClick={handleLogout}
+        title="Đăng xuất"
+      >
+        <LogOut size={18} />
+        {!collapsed && <span>Đăng xuất</span>}
+      </button>
 
       {/* Collapse toggle */}
       <button

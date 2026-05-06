@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import './MainLayout.css'; // Giữ nguyên file CSS này để style cho Sidebar/Header
+import './MainLayout.css';
 
 const MainLayout = () => {
   return (

@@ -1,4 +1,4 @@
-﻿using API.Enum;
+using API.Enum;
 using TaskStatus = API.Enum.TaskStatus;
 
 namespace API.Entities

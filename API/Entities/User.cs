@@ -1,4 +1,4 @@
-﻿using Task = API.Entities.Task;
+using Task = API.Entities.Task;
 
 namespace API.Entities
 {

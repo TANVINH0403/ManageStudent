@@ -1,26 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addTask } from '../../redux/taskSlice';
+import { createTask, fetchTasks } from '../../redux/taskSlice';
+import { fetchCategories } from '../../redux/categorySlice';
 import {
   ChevronLeft, ChevronRight, Plus, X,
   Filter, MoreHorizontal, CalendarDays
 } from 'lucide-react';
 import './Calendar.css';
 
-// Category dot color
-const CAT_COLORS = {
-  1: '#2563eb',  // Chuyên ngành → blue
-  2: '#16a34a',  // Học tập      → green
-  3: '#d97706',  // Đồ án        → amber
-  4: '#dc2626',  // Hoạt động    → red
-};
-// Category pill background (light tint)
-const CAT_BG = {
-  1: '#dbeafe',
-  2: '#dcfce7',
-  3: '#fef3c7',
-  4: '#fee2e2',
-};
+// Palette for category colors (cycles if more than 4 categories)
+const COLOR_PALETTE = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+const BG_PALETTE    = ['#dbeafe', '#dcfce7', '#fef3c7', '#fee2e2', '#ede9fe', '#cffafe'];
 
 const MONTH_NAMES = [
   'Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
@@ -32,6 +22,19 @@ const Calendar = () => {
   const dispatch   = useDispatch();
   const tasks      = useSelector(s => s.tasks.items);
   const categories = useSelector(s => s.categories.items);
+
+  // Build color maps from real categories
+  const catColorMap = {};
+  const catBgMap    = {};
+  categories.forEach((cat, i) => {
+    catColorMap[cat.id] = COLOR_PALETTE[i % COLOR_PALETTE.length];
+    catBgMap[cat.id]    = BG_PALETTE[i % BG_PALETTE.length];
+  });
+
+  useEffect(() => {
+    dispatch(fetchTasks());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const today = new Date();
   const [viewDate, setViewDate]         = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -88,11 +91,10 @@ const Calendar = () => {
   const handleQuickAdd = (e) => {
     if (e.key === 'Enter' && quickTitle.trim() && selectedDay) {
       const pad = (n) => String(n).padStart(2, '0');
-      dispatch(addTask({
-        id: Date.now(),
+      dispatch(createTask({
         title: quickTitle,
         description: '',
-        categoryId: categories[0]?.id ?? 1,
+        categoryId: categories[0]?.id ?? null,
         priority: 'Medium',
         status: 'Pending',
         progress: 0,
@@ -106,11 +108,10 @@ const Calendar = () => {
   const handleModalSubmit = (e) => {
     e.preventDefault();
     if (!modalForm.title.trim() || !modalForm.deadline) return;
-    dispatch(addTask({
-      id: Date.now(),
+    dispatch(createTask({
       title: modalForm.title,
       description: '',
-      categoryId: Number(modalForm.categoryId) || (categories[0]?.id ?? 1),
+      categoryId: Number(modalForm.categoryId) || (categories[0]?.id ?? null),
       priority: modalForm.priority,
       status: 'Pending',
       progress: 0,
@@ -188,9 +189,9 @@ const Calendar = () => {
                 <div className="cal-day-tasks">
                   {cellTasks.slice(0, maxVisible).map(task => (
                     <div key={task.id} className="cal-task-pill" title={task.title}
-                      style={{ background: CAT_BG[task.categoryId] ?? '#f1f5f9' }}>
-                      <span className="cal-dot" style={{ background: CAT_COLORS[task.categoryId] ?? '#64748b' }} />
-                      <span className="cal-pill-text" style={{ color: CAT_COLORS[task.categoryId] ?? '#334155' }}>{task.title}</span>
+                      style={{ background: catBgMap[task.categoryId] ?? '#f1f5f9' }}>
+                      <span className="cal-dot" style={{ background: catColorMap[task.categoryId] ?? '#64748b' }} />
+                      <span className="cal-pill-text" style={{ color: catColorMap[task.categoryId] ?? '#334155' }}>{task.title}</span>
                     </div>
                   ))}
                   {cellTasks.length > maxVisible && (
@@ -202,17 +203,12 @@ const Calendar = () => {
           })}
         </div>
 
-        {/* ── LEGEND ── */}
+        {/* ── LEGEND (real categories from API) ── */}
         <div className="cal-legend">
-          {[
-            { label: 'Công việc', color: '#3b82f6' },
-            { label: 'Học tập',   color: '#10b981' },
-            { label: 'Cuộc họp', color: '#ef4444' },
-            { label: 'Khác',     color: '#f59e0b' },
-          ].map(l => (
-            <div key={l.label} className="cal-legend-item">
-              <span className="cal-legend-dot" style={{ background: l.color }} />
-              <span>{l.label}</span>
+          {categories.map((cat) => (
+            <div key={cat.id} className="cal-legend-item">
+              <span className="cal-legend-dot" style={{ background: catColorMap[cat.id] ?? '#64748b' }} />
+              <span>{cat.name}</span>
             </div>
           ))}
         </div>
@@ -247,7 +243,7 @@ const Calendar = () => {
               <div className="cdp-task-list">
                 {selectedDayTasks.length > 0 ? selectedDayTasks.map(task => (
                   <div key={task.id} className="cdp-task-item">
-                    <span className="cdp-dot" style={{ background: CAT_COLORS[task.categoryId] ?? '#64748b' }} />
+                    <span className="cdp-dot" style={{ background: catColorMap[task.categoryId] ?? '#64748b' }} />
                     <div className="cdp-task-info">
                       <span className={`cdp-task-title ${task.status === 'Completed' ? 'done' : ''}`}>{task.title}</span>
                       <div className="cdp-task-meta">
