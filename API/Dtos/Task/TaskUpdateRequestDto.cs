@@ -1,4 +1,4 @@
-﻿using API.Enum;
+using API.Enum;
 using TaskStatus = API.Enum.TaskStatus;
 
 namespace API.Dtos.Task
@@ -13,5 +13,6 @@ namespace API.Dtos.Task
         public TaskPriority? Priority { get; set; }
         public int? ParentId { get; set; }
         public int? CategoryId { get; set; }
+        public int? Progress { get; set; }
     }
 }

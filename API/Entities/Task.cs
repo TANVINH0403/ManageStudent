@@ -11,6 +11,7 @@ namespace API.Entities
         public DateTime? DueDate { get; set; }
         public TaskStatus Status { get; set; }
         public TaskPriority Priority { get; set; }
+        public int Progress { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

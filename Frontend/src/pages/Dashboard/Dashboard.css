@@ -1,15 +1,15 @@
 :root {
   /* HỆ MÀU CHÍNH THỨC - Sửa ở đây là toàn bộ Web tự đổi màu */
-  --sales-primary: #818cf8;
+  --sales-primary: var(--primary);
   --sales-primary-light: #e0e7ff;
-  --sales-bg: #f3f4f9;
-  --sales-card-bg: #ffffff;
-  --sales-text-main: #1f2937;
-  --sales-text-muted: #6b7280;
+  --sales-bg: var(--bg-main);
+  --sales-card-bg: var(--sidebar-bg);
+  --sales-text-main: var(--text-main);
+  --sales-text-muted: var(--text-light);
   --sales-text-light: #9ca3af;
   --sales-red: #f87171;
   --sales-green: #34d399;
-  --sales-border: #f1f5f9;
+  --sales-border: var(--border-color);
   --sales-radius: 12px;
 }
 
@@ -63,7 +63,7 @@
 .sales-dashboard-wrapper .table-responsive { width: 100%; overflow-x: auto; margin-top: 12px; }
 .sales-dashboard-wrapper .student-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .sales-dashboard-wrapper .student-table th { text-align: left; padding: 12px 10px; color: var(--sales-text-muted); font-weight: 600; border-bottom: 1px solid var(--sales-border); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-.sales-dashboard-wrapper .student-table td { padding: 14px 10px; color: var(--sales-text-main); border-bottom: 1px solid #f9fafb; }
+.sales-dashboard-wrapper .student-table td { padding: 14px 10px; color: var(--sales-text-main); border-bottom: 1px solid var(--sales-border); }
 .align-right { text-align: right !important; }
 
 .status-badge-custom { padding: 6px 12px; border-radius: 4px; font-weight: 600; display: inline-block; font-size: 0.8rem; }
@@ -72,7 +72,7 @@
 
 .sales-dashboard-wrapper .clickable { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
 .sales-dashboard-wrapper .clickable:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(129, 140, 248, 0.1) !important; }
-.sales-dashboard-wrapper .clickable-row:hover { background-color: #f8fafc; cursor: pointer; }
+.sales-dashboard-wrapper .clickable-row:hover { background-color: var(--bg-main); cursor: pointer; }
 .card-header-with-link { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .btn-view-all { display: flex; align-items: center; gap: 4px; background: none; border: none; font-size: 0.8rem; font-weight: 600; color: var(--sales-primary); cursor: pointer; }
 .btn-view-all:hover { color: #4f46e5; }
@@ -91,6 +91,6 @@
 .bg-amber { background: #fef3c7; color: #92400e; }
 .date-picker-mock { display: flex; align-items: center; gap: 8px; background: var(--sales-card-bg); border: 1px solid var(--sales-border); padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; color: var(--sales-text-muted); font-weight: 500; }
 .fw-500 { font-weight: 500; }
-.task-name-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-task-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .clickable-card { cursor: pointer; transition: box-shadow 0.2s; }
 .clickable-card:hover { box-shadow: 0 8px 24px rgba(129,140,248,0.12) !important; }

@@ -1,4 +1,4 @@
-﻿using API.Enum;
+using API.Enum;
 
 using TaskStatus = API.Enum.TaskStatus;
 
@@ -18,5 +18,6 @@ namespace API.Dtos.Task
         public List<TaskResponseDto> SubTasks { get; set; }
         public List<string> Tags { get; set; }
         public bool HasSubtasks { get; set; }
+        public int Progress { get; set; }
     }
 }

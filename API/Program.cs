@@ -88,6 +88,12 @@ namespace API
                 using var scope = app.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 db.Database.EnsureCreated();
+                // Add any missing columns that EnsureCreated won't add to existing tables
+                try {
+                    db.Database.ExecuteSqlRaw(@"
+                        ALTER TABLE ""Tasks"" ADD COLUMN IF NOT EXISTS ""Progress"" integer NOT NULL DEFAULT 0;
+                    ");
+                } catch { /* Column may already exist */ }
             }
 
             app.Run();

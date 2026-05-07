@@ -1,4 +1,4 @@
-﻿using API.Common;
+using API.Common;
 using API.Dtos.User;
 using API.Interfaces;
 
@@ -43,6 +43,16 @@ namespace API.Service.UserService
                     user.Email,
                     user.CreatedAt,
                 };
+        }
+
+        public async Task<object> GetSettingsHandleAsync(int userId, CancellationToken ct)
+        {
+            var user = await _userRepository.GetByIdAsync(userId, ct);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found");
+            }
+            return new { preferences = user.Preferences };
         }
     }
 }

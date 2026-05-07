@@ -1,95 +1,53 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateTaskStatus, createTask, deleteTask, fetchTasks } from '../../redux/taskSlice';
+import { updateTaskStatus, createTask, updateTask, deleteTask, fetchTasks } from '../../redux/taskSlice';
 import { fetchCategories } from '../../redux/categorySlice';
 import {
   Plus, MoreHorizontal, Calendar, Clock, CheckCircle2, X,
   Filter, LayoutGrid, List, Settings2, Hash,
-  GripVertical, ChevronRight
+  GripVertical, ChevronRight, Edit2, Trash2
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
+import { useAuth } from '../../context/AuthContext';
+import { CreateTaskModal } from '../Tasks/Tasks';
 import './Kanban.css';
 
 /* ─── Column config ─── */
 const COLUMNS = [
   {
     id: 'Pending',
-    title: 'Chưa bắt đầu',
     dotColor: '#94a3b8',
     countBg: '#f1f5f9',
     countColor: '#64748b',
   },
   {
     id: 'In Progress',
-    title: 'Đang thực hiện',
     dotColor: '#f59e0b',
     countBg: '#fef3c7',
     countColor: '#d97706',
   },
   {
     id: 'Completed',
-    title: 'Hoàn thành',
     dotColor: '#10b981',
     countBg: '#dcfce7',
     countColor: '#16a34a',
   },
 ];
 
-/* ─── Quick-add inline form per column ─── */
-const QuickAddForm = ({ columnStatus, categories, onAdd, onCancel }) => {
-  const [title, setTitle] = useState('');
-  const [priority, setPriority] = useState('Medium');
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-    onAdd({
-      id: Date.now(),
-      title,
-      description: '',
-      categoryId: categories[0]?.id ?? 1,
-      priority,
-      status: columnStatus,
-      progress: 0,
-      deadline: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-    });
-    setTitle('');
-  };
-
-  return (
-    <form className="quick-add-form" onSubmit={submit}>
-      <input
-        autoFocus
-        type="text"
-        placeholder="Tên công việc..."
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        className="qa-input"
-      />
-      <div className="qa-row">
-        <select className="qa-select" value={priority} onChange={e => setPriority(e.target.value)}>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <div className="qa-actions">
-          <button type="submit" className="qa-btn-add">Thêm</button>
-          <button type="button" className="qa-btn-cancel" onClick={onCancel}><X size={14} /></button>
-        </div>
-      </div>
-    </form>
-  );
-};
+// Removed QuickAddForm as user wants the full modal.
 
 /* ─── Main Component ─── */
 const Kanban = () => {
   const dispatch   = useDispatch();
+  const { t, locale } = useTranslation();
+  const { isAuthenticated, showAuthModal } = useAuth();
   const tasks      = useSelector(s => s.tasks.items);
   const categories = useSelector(s => s.categories.items);
 
   const [dragging, setDragging]         = useState(null);
   const [dragOver, setDragOver]         = useState(null);
   const [showCreate, setShowCreate]     = useState(false);
-  const [quickAddCol, setQuickAddCol]   = useState(null);
+  const [editingTask, setEditingTask]   = useState(null);
   const [openMenuId, setOpenMenuId]     = useState(null);
   const menuRef = useRef(null);
 
@@ -126,32 +84,20 @@ const Kanban = () => {
   };
   const handleDragEnd = () => { setDragging(null); setDragOver(null); };
 
-  /* ── Quick add ── */
-  const handleQuickAdd = (task) => {
-    dispatch(createTask(task));
-    setQuickAddCol(null);
-  };
-
   /* ── Full modal create ── */
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'Medium', categoryId: '', deadline: '', status: 'Pending' });
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!newTask.title.trim()) return;
-    dispatch(createTask({
-      title: newTask.title,
-      description: newTask.description,
-      categoryId: Number(newTask.categoryId) || (categories[0]?.id ?? null),
-      priority: newTask.priority,
-      status: newTask.status,
-      progress: 0,
-      deadline: newTask.deadline || new Date().toISOString().split('T')[0],
-    }));
-    setNewTask({ title: '', description: '', priority: 'Medium', categoryId: '', deadline: '', status: 'Pending' });
+  const handleCreate = (taskData) => {
+    dispatch(createTask(taskData));
     setShowCreate(false);
   };
 
+  const handleEdit = (taskData) => {
+    dispatch(updateTask(taskData));
+    setEditingTask(null);
+  };
+
   const formatDate = (d) => {
-    try { return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: 'numeric', year: 'numeric' }); }
+    try { return new Date(d).toLocaleDateString(locale, { day: '2-digit', month: 'numeric', year: 'numeric' }); }
     catch { return d; }
   };
 
@@ -161,16 +107,16 @@ const Kanban = () => {
       {/* ── PAGE HEADER ── */}
       <div className="kb-page-header">
         <div className="kb-title-area">
-          <h1>Kanban Board</h1>
-          <p>Kéo thả để cập nhật trạng thái công việc.</p>
+          <h1>{t('kanban')}</h1>
+          <p>{t('manageTasks')}</p>
         </div>
         <div className="kb-toolbar">
-          <button className="kb-tool-btn outline">
-            <Filter size={15} /> Bộ lọc
+          <button className="kb-tool-btn outline" onClick={() => alert('Tính năng Bộ lọc đang được phát triển!')}>
+            <Filter size={15} /> {t('filter')}
           </button>
-          <button className="kb-tool-btn icon"><LayoutGrid size={17} /></button>
-          <button className="kb-tool-btn icon"><List size={17} /></button>
-          <button className="kb-tool-btn icon"><Settings2 size={17} /></button>
+          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng Grid View đang được phát triển!')}><LayoutGrid size={17} /></button>
+          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng List View đang được phát triển!')}><List size={17} /></button>
+          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng Cài đặt đang được phát triển!')}><Settings2 size={17} /></button>
         </div>
       </div>
 
@@ -181,9 +127,9 @@ const Kanban = () => {
             <Hash size={20} color="#7c3aed" />
           </div>
           <div className="kb-card-body">
-            <span className="kb-card-label">Tổng công việc</span>
+            <span className="kb-card-label">{t('totalTasks')}</span>
             <span className="kb-card-value">{summary.total}</span>
-            <span className="kb-card-sub">Tất cả</span>
+            <span className="kb-card-sub">{t('all')}</span>
           </div>
         </div>
         <div className="kb-summary-card">
@@ -191,9 +137,8 @@ const Kanban = () => {
             <Clock size={20} color="#64748b" />
           </div>
           <div className="kb-card-body">
-            <span className="kb-card-label">Chưa bắt đầu</span>
+            <span className="kb-card-label">{t('statusPending')}</span>
             <span className="kb-card-value">{summary.pending}</span>
-            <span className="kb-card-sub">Chờ xử lý</span>
           </div>
         </div>
         <div className="kb-summary-card">
@@ -201,9 +146,8 @@ const Kanban = () => {
             <Settings2 size={20} color="#d97706" />
           </div>
           <div className="kb-card-body">
-            <span className="kb-card-label">Đang thực hiện</span>
+            <span className="kb-card-label">{t('statusInProgress')}</span>
             <span className="kb-card-value">{summary.inProgress}</span>
-            <span className="kb-card-sub">Đang làm</span>
           </div>
         </div>
         <div className="kb-summary-card">
@@ -211,9 +155,8 @@ const Kanban = () => {
             <CheckCircle2 size={20} color="#16a34a" />
           </div>
           <div className="kb-card-body">
-            <span className="kb-card-label">Hoàn thành</span>
+            <span className="kb-card-label">{t('statusCompleted')}</span>
             <span className="kb-card-value">{summary.completed}</span>
-            <span className="kb-card-sub">Đã xong</span>
           </div>
         </div>
       </div>
@@ -235,13 +178,13 @@ const Kanban = () => {
               <div className="kb-col-header">
                 <div className="kb-col-title">
                   <span className="kb-col-dot" style={{ background: col.dotColor }} />
-                  <h3>{col.title}</h3>
+                  <h3>{t(col.id === 'In Progress' ? 'statusInProgress' : col.id === 'Completed' ? 'statusCompleted' : 'statusTodo')}</h3>
                   <span className="kb-col-count"
                     style={{ background: col.countBg, color: col.countColor }}>
                     {colTasks.length}
                   </span>
                 </div>
-                <button className="kb-col-add-btn" onClick={() => setQuickAddCol(col.id)}>
+                <button className="kb-col-add-btn" onClick={() => setShowCreate(col.id)}>
                   <Plus size={16} />
                 </button>
               </div>
@@ -256,9 +199,8 @@ const Kanban = () => {
                     onDragStart={e => handleDragStart(e, task)}
                     onDragEnd={handleDragEnd}
                   >
-                    {/* Card top */}
                     <div className="kb-card-top">
-                      <span className={`kb-priority ${task.priority}`}>{task.priority.toUpperCase()}</span>
+                      <span className={`kb-priority ${task.priority}`}>{(t(`priority${task.priority}`) || task.priority).toUpperCase()}</span>
                       <div className="kb-card-menu-wrap" ref={openMenuId === task.id ? menuRef : null}>
                         <button className="kb-card-menu-btn"
                           onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === task.id ? null : task.id); }}>
@@ -266,8 +208,17 @@ const Kanban = () => {
                         </button>
                         {openMenuId === task.id && (
                           <div className="kb-context-menu">
-                            <button onClick={() => setOpenMenuId(null)}>✏️ Chỉnh sửa</button>
-                            <button className="danger" onClick={() => { dispatch(deleteTask(task.id)); setOpenMenuId(null); }}>🗑️ Xóa</button>
+                            <button onClick={() => { setEditingTask(task); setOpenMenuId(null); }}>
+                              <Edit2 size={13} style={{ marginRight: 6 }}/> {t('editTaskBtn')}
+                            </button>
+                            <button className="danger" onClick={() => {
+                              if (window.confirm(`Bạn có chắc chắn muốn xóa task "${task.title}" không?`)) {
+                                dispatch(deleteTask(task.id));
+                              }
+                              setOpenMenuId(null);
+                            }}>
+                              <Trash2 size={13} style={{ marginRight: 6 }}/> {t('deleteTaskBtn')}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -300,82 +251,38 @@ const Kanban = () => {
                     </div>
                   </div>
                 ))}
+              </div>
 
-                {/* Inline quick-add form */}
-                {quickAddCol === col.id ? (
-                  <QuickAddForm
-                    columnStatus={col.id}
-                    categories={categories}
-                    onAdd={handleQuickAdd}
-                    onCancel={() => setQuickAddCol(null)}
-                  />
-                ) : (
-                  <button className="kb-add-card-btn" onClick={() => setQuickAddCol(col.id)}>
-                    <Plus size={15} /> Thêm công việc
-                  </button>
-                )}
+              <div className="kb-col-footer">
+                <button className="kb-add-card-btn" onClick={() => isAuthenticated ? setShowCreate(col.id) : showAuthModal()}>
+                  <Plus size={15} /> {t('createTask')}
+                </button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* ── CREATE TASK MODAL ── */}
+      {/* ── CREATE/EDIT TASK MODAL ── */}
       {showCreate && (
-        <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
-          <div className="create-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Tạo Task mới</h3>
-              <button className="btn-close" onClick={() => setShowCreate(false)}><X size={20} /></button>
-            </div>
-            <form className="modal-body" onSubmit={handleCreate}>
-              <div className="form-group">
-                <label>Tên công việc *</label>
-                <input type="text" placeholder="Nhập tên..." value={newTask.title} autoFocus required
-                  onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Mô tả</label>
-                <input type="text" placeholder="Mô tả ngắn..." value={newTask.description}
-                  onChange={e => setNewTask({ ...newTask, description: e.target.value })} />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Danh mục</label>
-                  <select value={newTask.categoryId} onChange={e => setNewTask({ ...newTask, categoryId: e.target.value })}>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Mức ưu tiên</label>
-                  <select value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Trạng thái</label>
-                  <select value={newTask.status} onChange={e => setNewTask({ ...newTask, status: e.target.value })}>
-                    <option value="Pending">Chưa bắt đầu</option>
-                    <option value="In Progress">Đang thực hiện</option>
-                    <option value="Completed">Hoàn thành</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Deadline</label>
-                  <input type="date" value={newTask.deadline} onChange={e => setNewTask({ ...newTask, deadline: e.target.value })} />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-outline" onClick={() => setShowCreate(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Tạo Task</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateTaskModal
+          categories={categories}
+          tags={[]}
+          dispatch={dispatch}
+          onClose={() => setShowCreate(false)}
+          onSave={handleCreate}
+          initialData={{ status: showCreate === true ? 'Pending' : showCreate }}
+        />
+      )}
+      {editingTask && (
+        <CreateTaskModal
+          categories={categories}
+          tags={[]}
+          dispatch={dispatch}
+          onClose={() => setEditingTask(null)}
+          onSave={handleEdit}
+          initialData={editingTask}
+        />
       )}
     </div>
   );

@@ -30,7 +30,10 @@ axiosClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Xử lý logout hoặc refresh token ở đây
-      console.error("Hết hạn token, vui lòng đăng nhập lại!");
+      console.error("Hết hạn token hoặc chưa đăng nhập!");
+      if (error.config?.method !== 'get') {
+        window.dispatchEvent(new Event('auth_required'));
+      }
     }
     return Promise.reject(error);
   }

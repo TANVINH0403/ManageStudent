@@ -21,47 +21,54 @@ namespace API.Service.NotificationService
 
         protected override async System.Threading.Tasks.Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-                var now = DateTime.UtcNow;
-
-                var tasks = await context.Tasks
-                    .Where(t =>
-                        t.DueDate != null &&
-                        t.Status != Enum.TaskStatus.Completed &&
-                        t.DueDate <= now.AddDays(2) &&
-                        t.DueDate > now
-                    )
-                    .ToListAsync();
-
-                foreach (var task in tasks)
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    if (!task.IsDueSoonNotified)
+                    using var scope = _scopeFactory.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+                    var now = DateTime.UtcNow;
+
+                    var tasks = await context.Tasks
+                        .Where(t =>
+                            t.DueDate != null &&
+                            t.Status != Enum.TaskStatus.Completed &&
+                            t.DueDate <= now.AddDays(2) &&
+                            t.DueDate > now
+                        )
+                        .ToListAsync(stoppingToken);
+
+                    foreach (var task in tasks)
                     {
-                        var notification = new Notification
+                        if (!task.IsDueSoonNotified)
                         {
-                            UserId = task.UserId,
-                            TaskId = task.TaskId,
-                            Type = NotificationType.DueSoon,
-                            Message = $"Task '{task.TaskName}' is due soon!"
-                        };
+                            var notification = new Notification
+                            {
+                                UserId = task.UserId,
+                                TaskId = task.TaskId,
+                                Type = NotificationType.DueSoon,
+                                Message = $"Task '{task.TaskName}' is due soon!"
+                            };
 
-                        context.Notifications.Add(notification);
+                            context.Notifications.Add(notification);
 
-                        task.IsDueSoonNotified = true;
+                            task.IsDueSoonNotified = true;
 
-                        await _hubContext.Clients
-                            .User(task.UserId.ToString())
-                            .SendAsync("ReceiveNotification", notification);
+                            await _hubContext.Clients
+                                .User(task.UserId.ToString())
+                                .SendAsync("ReceiveNotification", notification, cancellationToken: stoppingToken);
+                        }
                     }
+
+                    await context.SaveChangesAsync(stoppingToken);
+
+                    await System.Threading.Tasks.Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                 }
-
-                await context.SaveChangesAsync();
-
-                await System.Threading.Tasks.Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful shutdown
             }
         }
     }

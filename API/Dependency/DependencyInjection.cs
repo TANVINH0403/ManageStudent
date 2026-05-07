@@ -3,6 +3,7 @@ using API.Repository;
 using API.Service.AuthService;
 using API.Service.CategoryService;
 using API.Service.DashboardService;
+using API.Service.EmailService;
 using API.Service.FileService;
 using API.Service.FileService.SubabaseService;
 using API.Service.NotificationService;
@@ -77,6 +78,11 @@ namespace API.Dependency
             services.AddScoped<UpdateProfileService>();
             services.AddScoped<ChangePasswordService>();
 
+            // Email OTP
+            services.AddSingleton<OtpStore>();
+            services.AddScoped<IEmailService, SmtpEmailService>();
+            services.AddScoped<EmailChangeService>();
+
             services.AddScoped<IFileService, SupabaseFileService>();
 
             services.AddValidatorsFromAssemblyContaining<UploadFilesValidator>();
@@ -95,7 +101,7 @@ namespace API.Dependency
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy
-                    .WithOrigins("http://localhost:5173")
+                    .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
