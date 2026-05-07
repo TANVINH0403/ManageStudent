@@ -1,4 +1,4 @@
-﻿using API.Data;
+using API.Data;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +22,21 @@ namespace API.Repository
 
         public Task<User?> GetByUserNameAsync(string username)
         {
-            return _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
+            return _context.Users.FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower());
+        }
+
+        public Task<User?> GetByEmailAsync(string email)
+        {
+            return _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+        }
+
+        public Task<User?> GetByUserNameOrEmailAsync(string login)
+        {
+            var lowerLogin = login.ToLower();
+            return _context.Users
+                .Where(u => u.UserName.ToLower() == lowerLogin || u.Email.ToLower() == lowerLogin)
+                .OrderByDescending(u => u.UserId)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<User?> GetByIdAsync(int userId)

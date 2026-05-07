@@ -12,6 +12,7 @@ import {
   ChevronUp,
   GripVertical, ArrowUpDown, FolderKanban, ChevronRight
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import './Categories.css';
 
 /* ─── Color presets ─── */
@@ -57,6 +58,7 @@ const getIconByKey = (key) => ALL_ICONS.find(i => i.key === key)?.Icon ?? Folder
 
 const Categories = () => {
   const dispatch   = useDispatch();
+  const { t }      = useTranslation();
   const categories = useSelector(s => s.categories.items);
   const tasks      = useSelector(s => s.tasks.items);
 
@@ -68,7 +70,7 @@ const Categories = () => {
   const taskCountFor = (catId) => tasks.filter(t => t.categoryId === catId).length;
 
   /* Form state */
-  const defaultForm = { id: null, name: '', color: COLORS[0], iconKey: 'database' };
+  const defaultForm = { id: null, name: '', color: COLORS[0], iconKey: 'code2' };
   const [form, setForm]           = useState(defaultForm);
   const [isEditing, setIsEditing] = useState(false);
   const [showAllIcons, setShowAllIcons] = useState(false);
@@ -94,9 +96,9 @@ const Categories = () => {
       }
       // Check if action was rejected
       if (result.type?.endsWith('/rejected')) {
-        setFormMsg({ type: 'error', text: result.payload ?? 'Có lỗi xảy ra. Vui lòng thử lại.' });
+        setFormMsg({ type: 'error', text: result.payload ?? t('errorOccurred') });
       } else {
-        setFormMsg({ type: 'success', text: isEditing ? 'Cập nhật thành công!' : 'Tạo danh mục thành công!' });
+        setFormMsg({ type: 'success', text: isEditing ? t('catUpdateSuccess') : t('catCreateSuccess') });
         setForm(defaultForm);
         setIsEditing(false);
         // Refresh list from server
@@ -104,7 +106,7 @@ const Categories = () => {
         setTimeout(() => setFormMsg(null), 3000);
       }
     } catch (err) {
-      setFormMsg({ type: 'error', text: 'Lỗi kết nối. Kiểm tra lại API.' });
+      setFormMsg({ type: 'error', text: t('errorOccurred') });
     }
     setFormSaving(false);
   };
@@ -112,7 +114,7 @@ const Categories = () => {
   const handleEdit = (e, cat) => {
     e.stopPropagation();
     setIsEditing(true);
-    setForm({ id: cat.id, name: cat.name, color: cat.color, iconKey: cat.iconKey ?? 'database' });
+    setForm({ id: cat.id, name: cat.name, color: cat.color, iconKey: cat.iconKey ?? 'code2' });
   };
 
   const handleDelete = (e, id) => {
@@ -145,13 +147,13 @@ const Categories = () => {
       {/* ── PAGE HEADER ── */}
       <div className="cat-page-header">
         <div>
-          <h1>Manage Categories</h1>
-          <p>Phân loại công việc giúp bạn quản lý thời gian hiệu quả hơn.</p>
+          <h1>{t('categoryManagement')}</h1>
+          <p>{t('categoryDesc')}</p>
         </div>
         <nav className="cat-breadcrumb">
-          <span>Manage Categories</span>
+          <span>{t('categories')}</span>
           <ChevronRight size={14} />
-          <span className="bc-active">Danh sách</span>
+          <span className="bc-active">{t('categoryManagement')}</span>
         </nav>
       </div>
 
@@ -165,18 +167,18 @@ const Categories = () => {
               <FolderKanban size={22} color="#7c3aed" />
             </div>
             <div>
-              <h3>{isEditing ? 'Sửa Danh Mục' : 'Tạo Danh Mục Mới'}</h3>
-              <p>Thêm danh mục mới để phân loại công việc.</p>
+              <h3>{isEditing ? t('edit') : t('newCategory')}</h3>
+              <p>{t('categoryDesc')}</p>
             </div>
           </div>
 
           <form onSubmit={handleSave} className="cfp-form">
             {/* Name */}
             <div className="cfp-field">
-              <label>Tên danh mục <span className="required">*</span></label>
+              <label>{t('catName')} <span className="required">*</span></label>
               <input
                 type="text"
-                placeholder="VD: Môn Cấu trúc dữ liệu, Bài tập, Đồ án..."
+                placeholder={t('catName')}
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 required
@@ -185,7 +187,7 @@ const Categories = () => {
 
             {/* Color picker */}
             <div className="cfp-field">
-              <label>Màu sắc</label>
+              <label>{t('colorPalette')}</label>
               <div className="cfp-color-row">
                 {COLORS.map(c => (
                   <button key={c} type="button"
@@ -201,7 +203,7 @@ const Categories = () => {
 
             {/* Icon picker */}
             <div className="cfp-field">
-              <label>Biểu tượng</label>
+              <label>{t('iconSelect')}</label>
               <div className="cfp-icon-grid">
                 {/* Default 11 icons always visible */}
                 {ICONS_DEFAULT.map(({ key, Icon }) => (
@@ -247,10 +249,10 @@ const Categories = () => {
             {/* Actions */}
             <div className="cfp-actions">
               {isEditing && (
-                <button type="button" className="cfp-btn-cancel" onClick={handleCancel}>Hủy</button>
+                <button type="button" className="cfp-btn-cancel" onClick={handleCancel}>{t('cancel')}</button>
               )}
               <button type="submit" className="cfp-btn-submit" disabled={formSaving}>
-                {formSaving ? 'Đang lưu...' : (isEditing ? 'Cập nhật' : 'Tạo danh mục')}
+                {formSaving ? '...' : (isEditing ? t('updateCat') : t('createCategory'))}
               </button>
             </div>
           </form>
@@ -260,8 +262,8 @@ const Categories = () => {
         <div className="cat-list-panel">
           <div className="clp-header">
             <div>
-              <h3>Danh sách danh mục ({categories.length})</h3>
-              <p>Quản lý các danh mục hiện có.</p>
+              <h3>{t('categoryManagement')} ({categories.length})</h3>
+              <p>{t('categoryDesc')}</p>
             </div>
             <button className="clp-sort-btn"><ArrowUpDown size={15} /> Sắp xếp</button>
           </div>
@@ -284,28 +286,27 @@ const Categories = () => {
                   <div className="clp-info">
                     <span className="clp-name">{cat.name}</span>
                     <span className="clp-count" style={{ background: cat.color + '22', color: cat.color }}>
-                      {count} tasks
+                      {count} {t('tasksCount')}
                     </span>
                   </div>
 
                   {/* Color indicator */}
                   <div className="clp-color-section">
-                    <span className="clp-color-label">Màu sắc</span>
+                    <span className="clp-color-label">{t('colorPalette')}</span>
                     <span className="clp-color-dot" style={{ background: cat.color }} />
                   </div>
 
                   {/* Actions */}
                   <div className="clp-actions">
-                    <button className="clp-btn-edit" onClick={e => handleEdit(e, cat)} title="Sửa">
+                    <button className="clp-btn-edit" onClick={e => handleEdit(e, cat)} title={t('edit')}>
                       <Edit2 size={16} />
                     </button>
                     {count > 0 ? (
                       <div className="tooltip-wrap">
                         <button className="clp-btn-delete disabled" disabled><Trash2 size={16} /></button>
-                        <span className="tooltip-tip"><AlertCircle size={11} /> Đang chứa task</span>
                       </div>
                     ) : (
-                      <button className="clp-btn-delete" onClick={e => handleDelete(e, cat.id)} title="Xóa">
+                      <button className="clp-btn-delete" onClick={e => handleDelete(e, cat.id)} title={t('delete')}>
                         <Trash2 size={16} />
                       </button>
                     )}
@@ -343,7 +344,7 @@ const Categories = () => {
                 <div className="cdp-quick-add">
                   <PlusCircle size={17} color={activeCategory.color} />
                   <input type="text"
-                    placeholder={`Thêm task vào "${activeCategory.name}" (Enter)...`}
+                    placeholder={t('quickTaskAdd')}
                     value={newTaskTitle}
                     onChange={e => setNewTaskTitle(e.target.value)}
                     onKeyDown={handleQuickAdd} autoFocus
@@ -351,7 +352,7 @@ const Categories = () => {
                 </div>
 
                 <div className="cdp-task-list">
-                  <p className="cdp-list-label">Công việc ({activeTasks.length})</p>
+                  <p className="cdp-list-label">{t('allTasks')} ({activeTasks.length})</p>
                   {activeTasks.length > 0 ? activeTasks.map(task => (
                     <div key={task.id} className="cdp-task-item">
                       {task.status === 'Completed'
@@ -359,7 +360,7 @@ const Categories = () => {
                         : <Circle size={17} color="#cbd5e1" />}
                       <div className="cdp-task-info">
                         <span className={`cdp-task-name ${task.status === 'Completed' ? 'done' : ''}`}>{task.title}</span>
-                        <span className={`cdp-badge ${task.status.replace(/\s/g,'')}`}>{task.status}</span>
+                        <span className={`cdp-badge ${task.status.replace(/\s/g,'')}`}>{t('status' + task.status.replace(/\s/g,'')) || task.status}</span>
                       </div>
                     </div>
                   )) : (

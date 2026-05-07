@@ -72,7 +72,8 @@ namespace API.Service.TaskService
                 ParentId = x.ParentId,
                 Tags = x.TaskTags.Select(tt => tt.Tag.TagName).ToList(),
                 SubTasks = new List<TaskResponseDto>(),
-                HasSubtasks = tasksWithChildren.Contains(x.TaskId)
+                HasSubtasks = tasksWithChildren.Contains(x.TaskId),
+                Progress = x.Progress
             });
 
             return new

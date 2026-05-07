@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
 import './Login.css';
 
 const Register = () => {
   const navigate    = useNavigate();
   const { register } = useAuth();
+  const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]           = useState(false);
@@ -26,11 +28,11 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp!');
+      setError(t('pwdNotMatch'));
       return;
     }
     if (formData.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự.');
+      setError(t('pwdMinLength'));
       return;
     }
     setLoading(true);
@@ -47,7 +49,7 @@ const Register = () => {
     } catch (err) {
       const msg = err?.response?.data?.message
         || err?.response?.data?.errors?.[0]
-        || 'Đăng ký thất bại. Vui lòng thử lại.';
+        || t('registerFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -62,8 +64,8 @@ const Register = () => {
 
       <div className="login-card">
         <div className="login-header">
-          <h2>Đăng ký</h2>
-          <p>Tạo tài khoản mới để trải nghiệm hệ thống.</p>
+          <h2>{t('registerTitle')}</h2>
+          <p>{t('registerSub')}</p>
         </div>
 
         {error && (
@@ -82,29 +84,29 @@ const Register = () => {
 
         <form onSubmit={handleRegister} className="login-form">
           <div className="input-group">
-            <label>Tên đăng nhập</label>
+            <label>{t('usernameLabelReg')}</label>
             <div className="input-wrapper">
               <User className="input-icon" size={20} />
-              <input type="text" name="username" placeholder="VD: nguyenvana" value={formData.username} onChange={handleChange} required autoFocus />
+              <input type="text" name="username" placeholder={t('namePlaceholder')} value={formData.username} onChange={handleChange} required autoFocus />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Email</label>
+            <label>{t('emailLabelReg')}</label>
             <div className="input-wrapper">
               <Mail className="input-icon" size={20} />
-              <input type="email" name="email" placeholder="Nhập email của bạn" value={formData.email} onChange={handleChange} required />
+              <input type="email" name="email" placeholder={t('emailPlaceholder')} value={formData.email} onChange={handleChange} required />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Mật khẩu</label>
+            <label>{t('pwdLabelReg')}</label>
             <div className="input-wrapper">
               <Lock className="input-icon" size={20} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
-                placeholder="Tạo mật khẩu (ít nhất 6 ký tự)"
+                placeholder={t('pwdPlaceholderReg')}
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -116,13 +118,13 @@ const Register = () => {
           </div>
 
           <div className="input-group">
-            <label>Xác nhận mật khẩu</label>
+            <label>{t('confirmPwdLabelReg')}</label>
             <div className="input-wrapper">
               <Lock className="input-icon" size={20} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="confirmPassword"
-                placeholder="Nhập lại mật khẩu"
+                placeholder={t('confirmPwdPlaceholder')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
@@ -131,12 +133,12 @@ const Register = () => {
           </div>
 
           <button type="submit" className="btn-login" disabled={loading || success}>
-            {loading ? 'Đang xử lý...' : 'Tạo tài khoản'}
+            {loading ? t('registeringBtn') : t('registerBtn')}
           </button>
         </form>
 
         <p className="register-link">
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+          {t('alreadyHaveAccount')} <Link to="/login">{t('loginNow')}</Link>
         </p>
       </div>
     </div>

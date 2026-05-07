@@ -7,27 +7,24 @@ import {
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
 
 const Sidebar = () => {
   const location  = useLocation();
   const navigate  = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
-    { path: '/',           label: 'Dashboard',        icon: <LayoutDashboard size={20} /> },
-    { path: '/tasks',      label: 'Task List',         icon: <ListTodo size={20} /> },
-    { path: '/kanban',     label: 'Kanban Board',      icon: <KanbanSquare size={20} /> },
-    { path: '/calendar',   label: 'Calendar',          icon: <CalendarDays size={20} /> },
-    { path: '/categories', label: 'Manage Categories', icon: <FolderKanban size={20} /> },
-    { path: '/profile',    label: 'Profile',           icon: <User size={20} /> },
-    { path: '/settings',   label: 'Settings',          icon: <Settings size={20} /> },
+    { path: '/',           label: t('dashboard'),     icon: <LayoutDashboard size={20} /> },
+    { path: '/tasks',      label: t('taskList'),      icon: <ListTodo size={20} /> },
+    { path: '/kanban',     label: t('kanban'),        icon: <KanbanSquare size={20} /> },
+    { path: '/calendar',   label: t('calendar'),      icon: <CalendarDays size={20} /> },
+    { path: '/categories', label: t('categories'),    icon: <FolderKanban size={20} /> },
+    { path: '/profile',    label: t('profile'),       icon: <User size={20} /> },
+    { path: '/settings',   label: t('settings'),      icon: <Settings size={20} /> },
   ];
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
 
   return (
     <aside className={`sidebar-glass ${collapsed ? 'collapsed' : ''}`}>
@@ -57,33 +54,23 @@ const Sidebar = () => {
       {!collapsed && (
         <div className="sidebar-promo">
           <div className="promo-illustration">🚀</div>
-          <h4>Tăng năng suất mỗi ngày</h4>
-          <p>Theo dõi và quản lý công việc hiệu quả hơn.</p>
+          <h4>{t('promoTitle')}</h4>
+          <p>{t('promoDesc')}</p>
           <button className="btn-promo" onClick={() => navigate('/tasks')}>
-            Tìm hiểu thêm <ArrowRight size={14} />
+            {t('learnMore')} <ArrowRight size={14} />
           </button>
         </div>
       )}
-
-      {/* Logout button */}
-      <button
-        className="sidebar-logout-btn"
-        onClick={handleLogout}
-        title="Đăng xuất"
-      >
-        <LogOut size={18} />
-        {!collapsed && <span>Đăng xuất</span>}
-      </button>
 
       {/* Collapse toggle */}
       <button
         className="sidebar-collapse-btn"
         onClick={() => setCollapsed(c => !c)}
-        title={collapsed ? 'Mở rộng' : 'Thu gọn'}
+        title={collapsed ? t('expand') : t('collapse')}
       >
         {collapsed
           ? <ChevronRight size={16} />
-          : <><ChevronLeft size={16} /><span>Thu gọn</span></>
+          : <><ChevronLeft size={16} /><span>{t('collapse')}</span></>
         }
       </button>
     </aside>

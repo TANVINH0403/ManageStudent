@@ -20,7 +20,7 @@ const normalize = (t) => ({
   parentId:    t.parentId ?? null,
   tags:        t.tags ?? [],
   hasSubtasks: t.hasSubtasks ?? false,
-  progress:    t.status === 2 ? 100 : t.status === 1 ? 50 : 0,
+  progress:    t.progress ?? 0,
   notes:       t.notes ?? [],
 });
 
@@ -75,9 +75,13 @@ export const updateTask = createAsyncThunk(
         status:      STATUS_TO_NUM[data.status] ?? 0,
         priority:    PRIORITY_TO_NUM[data.priority] ?? 1,
         categoryId:  data.categoryId ? Number(data.categoryId) : null,
+        progress:    data.progress ?? 0,
       };
       await taskApi.update(id, payload);
-      return normalize({ taskId: id, ...payload, ...data });
+      // Re-fetch to get fresh data from server
+      const allRes = await taskApi.getAll();
+      const items = Array.isArray(allRes) ? allRes : (allRes.items ?? allRes.data ?? []);
+      return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi cập nhật task');
     }
@@ -136,11 +140,18 @@ const taskSlice = createSlice({
     builder
       .addCase(createTask.fulfilled, (state, { payload }) => { state.items = payload; });
 
-    // updateTask
+    // updateTask — trả về toàn bộ list mới
     builder
       .addCase(updateTask.fulfilled, (state, { payload }) => {
-        const idx = state.items.findIndex(t => t.id === payload.id);
-        if (idx !== -1) state.items[idx] = { ...state.items[idx], ...payload };
+        if (Array.isArray(payload)) {
+          // Preserve notes which are local-only
+          const notesMap = {};
+          state.items.forEach(t => { notesMap[t.id] = t.notes; });
+          state.items = payload.map(t => ({ ...t, notes: notesMap[t.id] ?? [] }));
+        } else {
+          const idx = state.items.findIndex(t => t.id === payload.id);
+          if (idx !== -1) state.items[idx] = { ...state.items[idx], ...payload };
+        }
       });
 
     // updateTaskStatus

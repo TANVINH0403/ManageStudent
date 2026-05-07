@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser]           = useState(null);      // { username, ... }
   const [token, setToken]         = useState(() => localStorage.getItem('access_token'));
   const [isLoading, setIsLoading] = useState(true);      // checking session on mount
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // ── On mount: verify token still valid ──────────────────────────────
   useEffect(() => {
@@ -29,6 +30,10 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
       })
       .finally(() => setIsLoading(false));
+
+    const handleAuthRequired = () => setIsAuthModalOpen(true);
+    window.addEventListener('auth_required', handleAuthRequired);
+    return () => window.removeEventListener('auth_required', handleAuthRequired);
   }, []);
 
   // ── Login ────────────────────────────────────────────────────────────
@@ -65,8 +70,15 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = !!token && !!user;
 
+  const updateUserSession = useCallback((newData) => {
+    setUser(prev => ({ ...prev, ...newData }));
+  }, []);
+
+  const showAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
+  const closeAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
+
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout, register, updateUserSession, isAuthModalOpen, showAuthModal, closeAuthModal }}>
       {children}
     </AuthContext.Provider>
   );

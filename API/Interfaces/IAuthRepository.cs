@@ -1,4 +1,4 @@
-﻿using API.Entities;
+using API.Entities;
 
 namespace API.Interfaces
 {
@@ -7,6 +7,8 @@ namespace API.Interfaces
         System.Threading.Tasks.Task AddAsync(User user);
         Task<User?> GetByUserNameAsync(string username);
         Task<User?> GetByIdAsync(int userId);
+        Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByUserNameOrEmailAsync(string login);
         Task<User?> GetByRefreshTokenAsync(string refreshToken);
     }
 }

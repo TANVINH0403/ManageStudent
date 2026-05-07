@@ -1,4 +1,4 @@
-﻿using API.Data;
+using API.Data;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +23,12 @@ namespace API.Repository
         {
             return await _context.Users
                 .FirstOrDefaultAsync(u => u.UserId == userId, ct);
+        }
+
+        public async Task<User?> GetByUserNameAsync(string username, CancellationToken ct)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.UserName.ToLower() == username.ToLower(), ct);
         }
 
         public async System.Threading.Tasks.Task SaveChangesAsync(CancellationToken ct)
