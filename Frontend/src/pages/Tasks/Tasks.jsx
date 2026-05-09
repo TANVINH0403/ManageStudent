@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes } from '../../redux/taskSlice';
+import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes, updateTaskStatus } from '../../redux/taskSlice';
 import { fetchCategories, createCategory } from '../../redux/categorySlice';
 import { fetchTags } from '../../redux/tagSlice';
 import taskFileApi from '../../api/taskFileApi';
@@ -216,9 +216,9 @@ export const CreateTaskModal = ({ categories, tags, dispatch, onClose, onSave, i
             <div className="form-group">
               <label>{t('priority')}</label>
               <select value={form.priority} onChange={e => set('priority', e.target.value)}>
-                <option value="High">🔴 {t('priorityHigh')}</option>
-                <option value="Medium">🟡 {t('priorityMedium')}</option>
-                <option value="Low">🟢 {t('priorityLow')}</option>
+                <option value="High">{t('priorityHigh')}</option>
+                <option value="Medium">{t('priorityMedium')}</option>
+                <option value="Low">{t('priorityLow')}</option>
               </select>
             </div>
             <div className="form-group">
@@ -381,9 +381,30 @@ const Tasks = () => {
     setSelectedTasks(prev => prev.length === paginated.length ? [] : paginated.map(t => t.id));
 
   const handleDeleteTask = (id) => {
-    dispatch(deleteTask(id));
-    setOpenMenuId(null);
-    if (activeTask?.id === id) setActiveTask(null);
+    if (window.confirm(t('confirmDelete') || 'Bạn có chắc chắn muốn xóa task này?')) {
+      dispatch(deleteTask(id));
+      setOpenMenuId(null);
+      if (activeTask?.id === id) setActiveTask(null);
+      setSelectedTasks(prev => prev.filter(i => i !== id));
+    }
+  };
+
+  // ── Bulk Actions ──────────────────────────────────────────────────────────
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Xóa ${selectedTasks.length} task đã chọn?`)) return;
+    await Promise.all(selectedTasks.map(id => dispatch(deleteTask(id))));
+    setSelectedTasks([]);
+    if (activeTask && selectedTasks.includes(activeTask.id)) setActiveTask(null);
+  };
+
+  const handleBulkComplete = async () => {
+    await Promise.all(selectedTasks.map(id => dispatch(updateTaskStatus({ id, status: 'Completed' }))));
+    setSelectedTasks([]);
+  };
+
+  const handleBulkInProgress = async () => {
+    await Promise.all(selectedTasks.map(id => dispatch(updateTaskStatus({ id, status: 'In Progress' }))));
+    setSelectedTasks([]);
   };
 
   const handleSaveDetail = async () => {
@@ -403,7 +424,6 @@ const Tasks = () => {
     const updatedNotes = [...(editTask.notes || []), note];
     const updatedTask  = { ...editTask, notes: updatedNotes };
     setEditTask(updatedTask);
-    // Notes lưu local (chưa có API riêng)
     dispatch(updateTaskNotes({ id: editTask.id, notes: updatedNotes }));
     setNewNote('');
   };
@@ -446,6 +466,11 @@ const Tasks = () => {
     } catch (err) { console.error('Delete file failed', err); }
   };
 
+  // subtasks của activeTask
+  const subTasks = activeTask
+    ? tasks.filter(t => t.parentId === activeTask.id)
+    : [];
+
   return (
     <div className="tasks-page">
 
@@ -456,6 +481,30 @@ const Tasks = () => {
           <p>{t('manageTasks')}</p>
         </div>
       </div>
+
+      {/* ── BULK ACTION BAR ── */}
+      {selectedTasks.length > 0 && (
+        <div className="bulk-action-bar">
+          <span className="bulk-count">
+            <CheckSquare size={16} color="#7c3aed" />
+            {selectedTasks.length} {t('tasksWord') || 'task'} {t('selected') || 'đã chọn'}
+          </span>
+          <div className="bulk-actions">
+            <button className="bulk-btn success" onClick={handleBulkComplete}>
+              <CheckCircle2 size={14} /> {t('statusCompleted') || 'Hoàn thành'}
+            </button>
+            <button className="bulk-btn info" onClick={handleBulkInProgress}>
+              <RefreshCw size={14} /> {t('statusInProgress') || 'In Progress'}
+            </button>
+            <button className="bulk-btn danger" onClick={handleBulkDelete}>
+              <Trash2 size={14} /> {t('deleteTaskBtn') || 'Xóa'}
+            </button>
+            <button className="bulk-btn neutral" onClick={() => setSelectedTasks([])}>
+              <X size={14} /> {t('cancel') || 'Bỏ chọn'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── SUMMARY CARDS ── */}
       <div className="summary-cards">
@@ -742,6 +791,23 @@ const Tasks = () => {
                     style={{ width: `${editTask.progress ?? 0}%`, background: (editTask.progress ?? 0) === 100 ? '#16a34a' : '#7c3aed' }} />
                 </div>
               </div>
+
+              {/* ── Tags ── */}
+              <div className="detail-group" style={{ marginTop: '10px' }}>
+                <span className="meta-label"><Tag size={13} /> {t('tags') || 'Thẻ'}</span>
+                {editTask.tags && editTask.tags.length > 0 ? (
+                  <div className="tags-selected" style={{ marginTop: '6px' }}>
+                    {editTask.tags.map(tag => (
+                      <span key={tag} className="tag-chip">
+                        <Hash size={12} /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-notes" style={{ textAlign: 'left', padding: '4px 0' }}>{t('noTags') || 'Không có thẻ nào'}</div>
+                )}
+              </div>
+
               {/* ── Files / Attachments ── */}
               <div className="detail-group">
                 <div className="desc-header">
@@ -770,6 +836,43 @@ const Tasks = () => {
                   ))}
                 </div>
               </div>
+
+              {/* ── Subtasks ── */}
+              {subTasks.length > 0 && (
+                <div className="detail-group">
+                  <div className="desc-header">
+                    <Layers size={15} /><h3>{t('subtasks') || 'Subtasks'} ({subTasks.length})</h3>
+                  </div>
+                  <div className="subtask-list">
+                    {subTasks.map(sub => (
+                      <div key={sub.id} className="subtask-item" onClick={() => openDetail(sub)} style={{ cursor: 'pointer' }}>
+                        <span className={`subtask-check ${sub.status === 'Completed' ? 'done' : ''}`}>
+                          {sub.status === 'Completed'
+                            ? <CheckCircle2 size={14} color="#16a34a" />
+                            : <Square size={14} color="#94a3b8" />}
+                        </span>
+                        <span className={`subtask-title ${sub.status === 'Completed' ? 'line-through' : ''}`}>
+                          {sub.title}
+                        </span>
+                        <span className={`badge-priority ${sub.priority}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                          <ArrowUp size={9} />
+                          {sub.priority === 'High' ? t('priorityHigh') : sub.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    className="btn-add-subtask"
+                    onClick={() => {
+                      setShowCreate(true);
+                      // Pre-fill parentId via initialData in modal by storing it
+                    }}
+                    style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px dashed #c4b5fd', borderRadius: 6, padding: '6px 12px', color: '#7c3aed', cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    <Plus size={13} /> {t('addSubtask') || 'Thêm subtask'}
+                  </button>
+                </div>
+              )}
 
               {/* ── Notes ── */}
               <div className="detail-group notes-group">

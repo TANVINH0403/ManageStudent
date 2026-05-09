@@ -1,4 +1,4 @@
-﻿using API.Enum;
+using API.Enum;
 
 namespace API.Entities
 {
@@ -9,8 +9,8 @@ namespace API.Entities
         public int UserId { get; set; }
         public User User { get; set; }
 
-        public int TaskId { get; set; }
-        public Task Task { get; set; }
+        public int? TaskId { get; set; }
+        public Task? Task { get; set; }
         public NotificationType Type { get; set; }
         public string Message { get; set; }
 

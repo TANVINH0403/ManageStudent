@@ -7,6 +7,8 @@ namespace API.Dtos.Task
     {
         public string? TaskName { get; set; }
         public string? Description { get; set; }
+        /// <summary>Set to true to explicitly clear the Description field (set to empty)</summary>
+        public bool ClearDescription { get; set; } = false;
         public DateTime? DueDate { get; set; }
         public TaskStatus? Status { get; set; }
         public DateTime? UpdateAt { get; set; }

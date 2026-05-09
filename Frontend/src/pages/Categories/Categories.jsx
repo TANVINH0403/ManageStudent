@@ -242,7 +242,8 @@ const Categories = () => {
             {/* Status message */}
             {formMsg && (
               <div className={`cfp-msg ${formMsg.type}`}>
-                {formMsg.type === 'success' ? '✅ ' : '❌ '}{formMsg.text}
+                {formMsg.type === 'success' ? <Check size={14} style={{ marginRight: 4 }} /> : <X size={14} style={{ marginRight: 4 }} />}
+                {formMsg.text}
               </div>
             )}
 
@@ -364,7 +365,7 @@ const Categories = () => {
                       </div>
                     </div>
                   )) : (
-                    <div className="cdp-empty">Chưa có công việc nào. Gõ vào ô trên để thêm! 🎉</div>
+                    <div className="cdp-empty">Chưa có công việc nào. Gõ vào ô trên để thêm!</div>
                   )}
                 </div>
               </div>

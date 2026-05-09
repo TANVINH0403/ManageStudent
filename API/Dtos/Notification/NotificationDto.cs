@@ -1,4 +1,4 @@
-﻿using API.Enum;
+using API.Enum;
 
 namespace API.Dtos.Notification
 {
@@ -8,7 +8,7 @@ namespace API.Dtos.Notification
         public string Message { get; set; }
         public bool IsRead { get; set; }
         public DateTime CreatedAt { get; set; }
-        public int TaskId { get; set; }
+        public int? TaskId { get; set; }
         public NotificationType Type { get; set; }
     }
 }

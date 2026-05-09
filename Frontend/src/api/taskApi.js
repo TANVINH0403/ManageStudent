@@ -6,7 +6,7 @@ import axiosClient from './axiosClient';
 // Priority: 0=Low,  1=Medium,     2=High
 
 const taskApi = {
-  getAll: (params = {}) => axiosClient.get('/task', { params }),
+  getAll: (params = {}) => axiosClient.get('/task', { params: { ...params, _t: new Date().getTime() } }),
   // params: { status?, priority?, categoryId?, keyword?, page?, pageSize? }
 
   getById: (taskId) => axiosClient.get(`/task/${taskId}`),

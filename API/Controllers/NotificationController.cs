@@ -1,4 +1,4 @@
-﻿using API.Service.NotificationService;
+using API.Service.NotificationService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +59,14 @@ namespace API.Controllers
                 return NotFound();
 
             return Ok();
+        }
+
+        [HttpPatch("mark-all-read")]
+        public async Task<IActionResult> MarkAllAsRead()
+        {
+            var userId = GetUserId();
+            await _handle.MarkAllAsRead(userId, CancellationToken.None);
+            return Ok(new { message = "All notifications marked as read" });
         }
 
 

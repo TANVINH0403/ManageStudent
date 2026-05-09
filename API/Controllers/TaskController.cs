@@ -173,11 +173,19 @@ namespace API.Controllers
             }
             var userId = int.Parse(userIdClaim);
 
-            await _deleteTask.DeleteTaskAsync(taskId, userId);
-            return Ok(new
+            try
             {
-                message = "Delete Successfully"
-            });
+                await _deleteTask.DeleteTaskAsync(taskId, userId);
+                return Ok(new { message = "Delete Successfully" });
+            }
+            catch (Exception ex) when (ex.Message == "Task Not Found")
+            {
+                return NotFound(new { message = "Task Not Found" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPatch("{taskId}/status")]

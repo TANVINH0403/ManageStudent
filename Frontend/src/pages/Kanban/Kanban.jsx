@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { updateTaskStatus, createTask, updateTask, deleteTask, fetchTasks } from '../../redux/taskSlice';
 import { fetchCategories } from '../../redux/categorySlice';
 import {
   Plus, MoreHorizontal, Calendar, Clock, CheckCircle2, X,
-  Filter, LayoutGrid, List, Settings2, Hash,
+  Filter, List, Settings2, Hash,
   GripVertical, ChevronRight, Edit2, Trash2
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -39,6 +40,7 @@ const COLUMNS = [
 /* ─── Main Component ─── */
 const Kanban = () => {
   const dispatch   = useDispatch();
+  const navigate   = useNavigate();
   const { t, locale } = useTranslation();
   const { isAuthenticated, showAuthModal } = useAuth();
   const tasks      = useSelector(s => s.tasks.items);
@@ -111,12 +113,11 @@ const Kanban = () => {
           <p>{t('manageTasks')}</p>
         </div>
         <div className="kb-toolbar">
-          <button className="kb-tool-btn outline" onClick={() => alert('Tính năng Bộ lọc đang được phát triển!')}>
+          <button className="kb-tool-btn outline" onClick={() => navigate('/tasks')}>
             <Filter size={15} /> {t('filter')}
           </button>
-          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng Grid View đang được phát triển!')}><LayoutGrid size={17} /></button>
-          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng List View đang được phát triển!')}><List size={17} /></button>
-          <button className="kb-tool-btn icon" onClick={() => alert('Tính năng Cài đặt đang được phát triển!')}><Settings2 size={17} /></button>
+          <button className="kb-tool-btn icon" title={t('listView') || 'List View'} onClick={() => navigate('/tasks')}><List size={17} /></button>
+          <button className="kb-tool-btn icon" title={t('settings') || 'Settings'} onClick={() => navigate('/settings')}><Settings2 size={17} /></button>
         </div>
       </div>
 

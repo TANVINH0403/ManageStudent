@@ -310,7 +310,8 @@ const Profile = () => {
               <div style={{ padding: '10px 14px', borderRadius: 10, marginBottom: 16, fontSize: '0.9rem', fontWeight: 500,
                 background: otpMsg.type === 'success' ? '#dcfce7' : '#fee2e2',
                 color:      otpMsg.type === 'success' ? '#166534' : '#991b1b' }}>
-                {otpMsg.type === 'success' ? '✅ ' : '❌ '}{otpMsg.text}
+                {otpMsg.type === 'success' ? <CheckCircle2 size={16} style={{ marginRight: 4 }} /> : <X size={16} style={{ marginRight: 4 }} />}
+                {otpMsg.text}
               </div>
             )}
 
@@ -377,7 +378,8 @@ const Profile = () => {
               <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>Sẽ gửi OTP để xác minh nếu đổi Email</p>
               {saveMsg && (
                 <div className={`profile-msg ${saveMsg.type}`}>
-                  {saveMsg.type === 'success' ? '✅ ' : '❌ '}{saveMsg.text}
+                  {saveMsg.type === 'success' ? <CheckCircle2 size={16} style={{ marginRight: 4 }} /> : <X size={16} style={{ marginRight: 4 }} />}
+                  {saveMsg.text}
                 </div>
               )}
             </div>

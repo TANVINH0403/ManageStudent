@@ -1,4 +1,4 @@
-﻿using API.Interfaces;
+using API.Interfaces;
 using API.UnitOfWork;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,17 +29,24 @@ namespace API.Service.TaskService
                 throw new Exception("Invalid status");
             }
 
+            Console.WriteLine($"UpdateStatusAsync START: taskId={taskId}, userId={userId}, status={status}");
+
             if(status == Enum.TaskStatus.Completed)
             {
+                Console.WriteLine("Calling CompleteTaskTree");
                 await CompleteTaskTree(taskId, userId);
             }
             else
             {
+                Console.WriteLine("Updating single task status");
                 task.Status = status;
                 task.CompletedAt = null;
+                task.IsDueSoonNotified = false;
             }
 
-            await _uow.SaveChangesAsync();
+            Console.WriteLine($"Before SaveChangesAsync. task.Status={task.Status}");
+            var rows = await _uow.SaveChangesAsync();
+            Console.WriteLine($"After SaveChangesAsync. Rows affected: {rows}");
 
             return true;
         }
