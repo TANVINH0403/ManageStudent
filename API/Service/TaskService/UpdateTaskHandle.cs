@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 using API.UnitOfWork;
 using NPOI.OpenXmlFormats.Spreadsheet;
@@ -99,6 +99,11 @@ namespace API.Service.TaskService
                 {
                     task.CompletedAt = null;
                 }
+            }
+
+            if (request.Progress.HasValue)
+            {
+                task.Progress = Math.Clamp(request.Progress.Value, 0, 100);
             }
 
             await _uow.SaveChangesAsync();

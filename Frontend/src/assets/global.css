@@ -9,7 +9,29 @@
   --glass-bg: rgba(255, 255, 255, 0.8);
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --border-color: #e2e8f0;
 }
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+body[data-theme="dark"] {
+  --primary: #4f8aff;
+  --bg-main: #0f172a;
+  --sidebar-bg: #1e293b;
+  --text-main: #f8fafc;
+  --text-light: #94a3b8;
+  --glass-bg: rgba(30, 41, 59, 0.9);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --border-color: #334155;
+  color-scheme: dark;
+}
+
+html[data-font-size="small"] body { font-size: 14px; }
+html[data-font-size="medium"] body { font-size: 16px; }
+html[data-font-size="large"] body { font-size: 18px; }
+
+html[data-density="compact"] .set-content { gap: 14px; }
+html[data-density="spacious"] .set-content { gap: 36px; }
 
 * {
   margin: 0;
@@ -23,6 +45,18 @@ body {
   color: var(--text-main);
   height: 100vh;
   overflow: hidden; /* Không cho scroll cả trang, chỉ scroll nội dung */
+}
+
+input, textarea, select {
+  background-color: transparent;
+  color: var(--text-main);
+  font-family: inherit;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-light);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
 }
 
 #root {

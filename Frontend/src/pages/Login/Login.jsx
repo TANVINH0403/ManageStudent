@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
 import './Login.css';
 
 const Login = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]           = useState(false);
@@ -24,7 +26,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!formData.username.trim() || !formData.password.trim()) {
-      setError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
+      setError(t('loginErrorEmpty'));
       return;
     }
     setLoading(true);
@@ -36,7 +38,7 @@ const Login = () => {
     } catch (err) {
       const msg = err?.response?.data?.message
         || err?.response?.data?.errors?.[0]
-        || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+        || t('loginErrorFailed');
       setError(msg);
     } finally {
       setLoading(false);
@@ -51,8 +53,8 @@ const Login = () => {
 
       <div className="login-card">
         <div className="login-header">
-          <h2>Đăng nhập</h2>
-          <p>Điền thông tin tài khoản để tiếp tục.</p>
+          <h2>{t('loginTitle')}</h2>
+          <p>{t('loginSub')}</p>
         </div>
 
         {error && (
@@ -64,13 +66,13 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="input-group">
-            <label>Tên đăng nhập</label>
+            <label>{t('usernameLabel')}</label>
             <div className="input-wrapper">
               <Mail className="input-icon" size={20} />
               <input
                 type="text"
                 name="username"
-                placeholder="Nhập tên đăng nhập"
+                placeholder={t('usernamePlaceholder')}
                 value={formData.username}
                 onChange={handleChange}
                 required
@@ -80,13 +82,13 @@ const Login = () => {
           </div>
 
           <div className="input-group">
-            <label>Mật khẩu</label>
+            <label>{t('password')}</label>
             <div className="input-wrapper">
               <Lock className="input-icon" size={20} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
-                placeholder="Nhập mật khẩu"
+                placeholder={t('passwordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -102,12 +104,12 @@ const Login = () => {
           </div>
 
           <button type="submit" className="btn-login" disabled={loading}>
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? t('loggingIn') : t('loginBtn')}
           </button>
         </form>
 
         <p className="register-link">
-          Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          {t('noAccount')} <Link to="/register">{t('registerNow')}</Link>
         </p>
       </div>
     </div>

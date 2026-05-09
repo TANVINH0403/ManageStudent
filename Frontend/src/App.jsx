@@ -6,8 +6,6 @@ import MainLayout from './components/layout/MainLayout';
 
 import Dashboard    from './pages/Dashboard/Dashboard';
 import Tasks        from './pages/Tasks/Tasks';
-import Login        from './pages/Login/Login';
-import Register     from './pages/Login/Register';
 import Kanban       from './pages/Kanban/Kanban';
 import Categories   from './pages/Categories/Categories';
 import Calendar     from './pages/Calendar/Calendar';
@@ -19,16 +17,8 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login"    element={<Login />} />
-          <Route path="/register" element={<Register />} />
-
-          {/* Protected routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }>
+          {/* App routes now public for layout, actions protected by AuthModal */}
+          <Route path="/" element={<MainLayout />}>
             <Route index               element={<Dashboard />} />
             <Route path="tasks"        element={<Tasks />} />
             <Route path="kanban"       element={<Kanban />} />

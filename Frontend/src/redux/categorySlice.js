@@ -3,17 +3,35 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import categoryApi from '../api/categoryApi';
 
 // Chuẩn hoá category từ BE → FE
-const normalize = (c) => ({
-  id:          c.categoryId,
-  name:        c.categoryName,
-  description: c.description ?? '',
-  color:       c.color ?? '#7c3aed',   // BE chưa có trường color → dùng mặc định
-  iconKey:     c.iconKey ?? 'database', // BE chưa có trường iconKey → dùng mặc định
-  status:      c.status ?? 0,
-  priority:    c.priority ?? 0,
-  endDate:     c.endDate ?? null,
-  visibility:  c.visibility ?? 'Public',
-});
+const normalize = (c) => {
+  let parsedDesc = c.description;
+  let color = '#7c3aed';
+  let iconKey = 'code2';
+  try {
+    const meta = JSON.parse(c.description);
+    if (meta && meta.color) {
+      color = meta.color;
+      // 'database' was the old default — migrate to 'code2' (source code icon)
+      const rawKey = meta.iconKey || 'code2';
+      iconKey = rawKey === 'database' ? 'code2' : rawKey;
+      parsedDesc = meta.desc || '';
+    }
+  } catch (e) {
+    // Not JSON, ignore
+  }
+
+  return {
+    id:          c.categoryId,
+    name:        c.categoryName,
+    description: parsedDesc,
+    color:       color,
+    iconKey:     iconKey,
+    status:      c.status ?? 0,
+    priority:    c.priority ?? 0,
+    endDate:     c.endDate ?? null,
+    visibility:  c.visibility ?? 'Public',
+  };
+};
 
 // ── Async Thunks ──────────────────────────────────────────────────────────────
 
@@ -36,7 +54,7 @@ export const createCategory = createAsyncThunk(
     try {
       const payload = {
         categoryName: formData.name,
-        description:  formData.description ?? '',
+        description:  JSON.stringify({ desc: formData.description || '', color: formData.color, iconKey: formData.iconKey }),
         priority:     formData.priority ?? 0,
         status:       formData.status ?? 0,
         endDate:      formData.endDate ?? null,
@@ -58,7 +76,7 @@ export const updateCategory = createAsyncThunk(
     try {
       const payload = {
         categoryName: data.name,
-        description:  data.description ?? '',
+        description:  JSON.stringify({ desc: data.description || '', color: data.color, iconKey: data.iconKey }),
         priority:     data.priority ?? 0,
         status:       data.status ?? 0,
         endDate:      data.endDate ?? null,

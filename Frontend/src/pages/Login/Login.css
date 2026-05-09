@@ -21,7 +21,7 @@
 
 /* FORM ĐĂNG NHẬP */
 .login-card {
-  background: #ffffff;
+  background: var(--sidebar-bg);
   width: 100%;
   max-width: 420px;
   padding: 40px;
@@ -38,12 +38,12 @@
 
 .login-header h2 {
   font-size: 2rem;
-  color: #1e293b;
+  color: var(--text-main);
   margin-bottom: 8px;
 }
 
 .login-header p {
-  color: #64748b;
+  color: var(--text-light);
   font-size: 0.95rem;
 }
 
@@ -55,7 +55,7 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-main);
   margin-bottom: 8px;
 }
 
@@ -68,23 +68,23 @@
 .input-icon {
   position: absolute;
   left: 16px;
-  color: #94a3b8;
+  color: var(--text-light);
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 14px 16px 14px 48px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
   transition: all 0.3s;
-  background: #f8fafc;
+  background: var(--bg-main);
 }
 
 .input-wrapper input:focus {
   border-color: #3b82f6;
-  background: #ffffff;
+  background: var(--sidebar-bg);
   outline: none;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
@@ -94,7 +94,7 @@
   right: 16px;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-light);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -112,7 +112,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #475569;
+  color: var(--text-light);
   cursor: pointer;
 }
 
@@ -144,7 +144,7 @@
 }
 
 .btn-login:disabled {
-  background: #94a3b8;
+  background: var(--text-light);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -153,7 +153,7 @@
   text-align: center;
   margin-top: 24px;
   font-size: 0.95rem;
-  color: #64748b;
+  color: var(--text-light);
 }
 
 .register-link a {

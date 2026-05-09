@@ -1,18 +1,22 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, Plus, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../hooks/useTranslation';
 import * as signalR from '@microsoft/signalr';
 import notificationApi from '../../api/notificationApi';
 import './Header.css';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated, showAuthModal, logout } = useAuth();
+  const { t, locale } = useTranslation();
   const [notifications, setNotifications] = React.useState([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [showDropdown, setShowDropdown] = React.useState(false);
+  const [showUserDropdown, setShowUserDropdown] = React.useState(false);
   const dropdownRef = React.useRef(null);
+  const userDropdownRef = React.useRef(null);
 
   // Ctrl + / shortcut để focus search
   React.useEffect(() => {
@@ -80,23 +84,31 @@ const Header = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleNotificationClick = async (notif) => {
-    if (!notif.isRead) {
+    const isRead = notif.isRead ?? notif.IsRead;
+    const id = notif.id ?? notif.Id;
+    if (!isRead) {
       try {
-        await notificationApi.markAsRead(notif.id);
+        await notificationApi.markAsRead(id);
         setUnreadCount(prev => Math.max(0, prev - 1));
-        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
-      } catch (err) {
+        setNotifications(prev => prev.map(n => {
+          const nId = n.id ?? n.Id;
+          return nId === id ? { ...n, isRead: true, IsRead: true } : n;
+        }));
+      } catch(err) {
         console.error("Failed to mark as read", err);
       }
     }
     setShowDropdown(false);
-    if (notif.taskId) {
+    if (notif.taskId || notif.TaskId) {
       navigate('/tasks'); // Or open the specific task modal
     }
   };
@@ -104,7 +116,7 @@ const Header = () => {
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString(locale) + ' ' + date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -114,55 +126,90 @@ const Header = () => {
         <input
           id="global-search"
           type="text"
-          placeholder="Search tasks, categories..."
+          placeholder={t('searchPlaceholder')}
         />
         <span className="kbd-hint">Ctrl /</span>
       </div>
 
       <div className="header-right">
         <div className="notification-wrapper" ref={dropdownRef}>
-          <div className="icon-btn notification" onClick={() => setShowDropdown(!showDropdown)}>
+          <div className="icon-btn notification" onClick={() => setShowDropdown(!showDropdown)} style={{ position: 'relative' }}>
             <Bell size={20} color="#64748b" />
-            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+            {unreadCount > 0 && <span className="header-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
           </div>
           
           {showDropdown && (
             <div className="notification-dropdown">
               <div className="nd-header">
-                <h3>Thông báo</h3>
-                {unreadCount > 0 && <span className="nd-unread-badge">{unreadCount} chưa đọc</span>}
+                <h3>{t('notifications')}</h3>
+                {unreadCount > 0 && <span className="nd-unread-badge">{unreadCount} {t('unread')}</span>}
               </div>
               <div className="nd-list">
                 {notifications.length === 0 ? (
-                  <div className="nd-empty">Không có thông báo nào</div>
+                  <div className="nd-empty">{t('noNotifications')}</div>
                 ) : (
-                  notifications.map(notif => (
+                  notifications.map(notif => {
+                    const id = notif.id ?? notif.Id;
+                    const isRead = notif.isRead ?? notif.IsRead;
+                    const message = notif.message ?? notif.Message;
+                    const createdAt = notif.createdAt ?? notif.CreatedAt;
+                    return (
                     <div 
-                      key={notif.id} 
-                      className={`nd-item ${!notif.isRead ? 'unread' : ''}`}
+                      key={id} 
+                      className={`nd-item ${!isRead ? 'unread' : ''}`}
                       onClick={() => handleNotificationClick(notif)}
                     >
                       <div className="nd-item-icon">
-                        <Bell size={16} color={notif.isRead ? "#94a3b8" : "#3b82f6"} />
+                        <Bell size={16} color={isRead ? "#94a3b8" : "#3b82f6"} />
                       </div>
                       <div className="nd-item-content">
-                        <p>{notif.message}</p>
-                        <span>{formatTime(notif.createdAt)}</span>
+                        <p>{message}</p>
+                        <span>{formatTime(createdAt)}</span>
                       </div>
-                      {!notif.isRead && <div className="nd-unread-dot" />}
+                      {!isRead && <div className="nd-unread-dot" />}
                     </div>
-                  ))
+                  )})
                 )}
               </div>
             </div>
           )}
         </div>
 
-        <Link to="/profile" className="user-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <img src={user?.avatar || "https://ui-avatars.com/api/?name=" + (user?.username || "Guest") + "&background=random"} alt="User Avatar" />
-          <span className="user-name">{user?.username || 'Guest'}</span>
-          <ChevronDown size={14} color="#94a3b8" />
-        </Link>
+        {isAuthenticated ? (
+          <div className="user-dropdown-wrapper" ref={userDropdownRef} style={{ position: 'relative' }}>
+            <div className="user-card" onClick={() => setShowUserDropdown(!showUserDropdown)} style={{ cursor: 'pointer' }}>
+              <img src={user?.avatar || "https://ui-avatars.com/api/?name=" + (user?.username || "Guest") + "&background=random"} alt="User Avatar" />
+              <span className="user-name">{user?.username}</span>
+              <ChevronDown size={14} color="#94a3b8" />
+            </div>
+            {showUserDropdown && (
+              <div className="user-dropdown-menu" style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                background: 'var(--sidebar-bg)', border: '1px solid var(--border-color)',
+                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                minWidth: '150px', zIndex: 100, overflow: 'hidden'
+              }}>
+                <div onClick={() => { setShowUserDropdown(false); navigate('/profile'); }} style={{
+                  padding: '12px 16px', cursor: 'pointer', color: 'var(--text-main)', fontSize: '0.95rem',
+                  borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s',
+                  display: 'flex', alignItems: 'center', gap: '8px'
+                }} className="ud-item hover-bg">
+                  {t('profile') || 'Hồ sơ'}
+                </div>
+                <div onClick={async () => { setShowUserDropdown(false); await logout(); window.location.href = '/'; }} style={{
+                  padding: '12px 16px', cursor: 'pointer', color: '#ef4444', fontSize: '0.95rem',
+                  transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '8px'
+                }} className="ud-item hover-bg">
+                  {t('logout') || 'Đăng xuất'}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button className="btn-primary" onClick={showAuthModal}>
+            {t('loginBtn')}
+          </button>
+        )}
       </div>
     </header>
   );

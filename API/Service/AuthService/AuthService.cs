@@ -1,4 +1,4 @@
-﻿using API.Common;
+using API.Common;
 using API.Dtos.Auth;
 using API.Dtos.User;
 using API.Entities;
@@ -30,15 +30,15 @@ namespace API.Service.AuthService
         // LOGIN
         public async Task<Result<LoginResponseDto>> LoginHandleAsync(LoginRequestDto model)
         {
-            var user = await _authRepository.GetByUserNameAsync(model.UserName);
+            var user = await _authRepository.GetByUserNameOrEmailAsync(model.UserName);
 
             if (user == null)
-                return Result<LoginResponseDto>.Failure("User not found");
+                return Result<LoginResponseDto>.Failure("Tài khoản không tồn tại");
 
             var verify = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
 
             if (verify == PasswordVerificationResult.Failed)
-                return Result<LoginResponseDto>.Failure("Invalid username or password");
+                return Result<LoginResponseDto>.Failure("Mật khẩu không chính xác");
 
             var tokenDto = GenerateTokens(user);
 
@@ -85,9 +85,12 @@ namespace API.Service.AuthService
         public async Task<Result<RegisterResponseDto>> RegisterHandleAsync(RegisterRequestDto model)
         {
             var existingUser = await _authRepository.GetByUserNameAsync(model.Username);
-
             if (existingUser != null)
-                return Result<RegisterResponseDto>.Failure("Username already exists");
+                return Result<RegisterResponseDto>.Failure("Tên đăng nhập đã tồn tại");
+
+            var existingEmail = await _authRepository.GetByEmailAsync(model.Email);
+            if (existingEmail != null)
+                return Result<RegisterResponseDto>.Failure("Email đã được sử dụng");
 
             var user = new User
             {

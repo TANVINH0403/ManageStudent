@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Plus, X,
   Filter, MoreHorizontal, CalendarDays
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import './Calendar.css';
 
 // Palette for category colors (cycles if more than 4 categories)
@@ -20,6 +21,7 @@ const DAY_NAMES = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','
 
 const Calendar = () => {
   const dispatch   = useDispatch();
+  const { t, locale } = useTranslation();
   const tasks      = useSelector(s => s.tasks.items);
   const categories = useSelector(s => s.categories.items);
 
@@ -130,11 +132,11 @@ const Calendar = () => {
       {/* ── PAGE HEADER ── */}
       <div className="cal-header">
         <div className="cal-title-area">
-          <h1>Calendar</h1>
-          <p>Theo dõi deadline và lịch trình công việc của bạn.</p>
+          <h1>{t('calendar')}</h1>
+          <p>{t('manageTasks')}</p>
         </div>
         <button className="cal-btn-add" onClick={() => setIsModalOpen(true)}>
-          <Plus size={17} /> Thêm sự kiện
+          <Plus size={17} /> {t('add')}
         </button>
       </div>
 
@@ -146,7 +148,7 @@ const Calendar = () => {
           <div className="cal-nav-left">
             <button className="cal-nav-btn" onClick={prevMonth}><ChevronLeft size={18} /></button>
             <span className="cal-month-label">
-              {MONTH_NAMES[month]} {year}
+              {new Date(year, month).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
               <CalendarDays size={16} color="#7c3aed" style={{ marginLeft: 8, verticalAlign: 'middle' }} />
             </span>
             <button className="cal-nav-btn" onClick={nextMonth}><ChevronRight size={18} /></button>
@@ -155,9 +157,9 @@ const Calendar = () => {
           <div className="cal-nav-right">
             <button className="cal-nav-btn" onClick={prevMonth}><ChevronLeft size={18} /></button>
             <button className="cal-nav-btn" onClick={nextMonth}><ChevronRight size={18} /></button>
-            <button className="cal-today-btn" onClick={goToday}>Hôm nay</button>
+            <button className="cal-today-btn" onClick={goToday}>{t('todayStr') || 'Hôm nay'}</button>
             <div className="cal-view-dropdown">
-              Tháng <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
+              {t('month')} <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
             </div>
             <button className="cal-icon-btn"><Filter size={16} /></button>
             <button className="cal-icon-btn"><MoreHorizontal size={16} /></button>
@@ -166,8 +168,10 @@ const Calendar = () => {
 
         {/* Day-of-week headers */}
         <div className="cal-weekday-row">
-          {DAY_NAMES.map(d => (
-            <div key={d} className="cal-weekday-cell">{d}</div>
+          {[1, 2, 3, 4, 5, 6, 7].map(d => (
+            <div key={d} className="cal-weekday-cell">
+              {new Date(2024, 0, d).toLocaleDateString(locale, { weekday: 'short' })}
+            </div>
           ))}
         </div>
 
@@ -189,9 +193,9 @@ const Calendar = () => {
                 <div className="cal-day-tasks">
                   {cellTasks.slice(0, maxVisible).map(task => (
                     <div key={task.id} className="cal-task-pill" title={task.title}
-                      style={{ background: catBgMap[task.categoryId] ?? '#f1f5f9' }}>
+                      style={{ background: catBgMap[task.categoryId] ?? 'var(--bg-main)' }}>
                       <span className="cal-dot" style={{ background: catColorMap[task.categoryId] ?? '#64748b' }} />
-                      <span className="cal-pill-text" style={{ color: catColorMap[task.categoryId] ?? '#334155' }}>{task.title}</span>
+                      <span className="cal-pill-text" style={{ color: catColorMap[task.categoryId] ?? 'var(--text-main)' }}>{task.title}</span>
                     </div>
                   ))}
                   {cellTasks.length > maxVisible && (
@@ -247,9 +251,9 @@ const Calendar = () => {
                     <div className="cdp-task-info">
                       <span className={`cdp-task-title ${task.status === 'Completed' ? 'done' : ''}`}>{task.title}</span>
                       <div className="cdp-task-meta">
-                        <span className={`cdp-badge ${task.priority}`}>{task.priority}</span>
+                        <span className={`cdp-badge ${task.priority}`}>{(t(`priority${task.priority}`) || task.priority).toUpperCase()}</span>
                         <span className="cdp-cat">{catName(task.categoryId)}</span>
-                        <span className={`cdp-status ${task.status.replace(/\s/g,'')}`}>{task.status}</span>
+                        <span className={`cdp-status ${task.status.replace(/\s/g,'')}`}>{t('status' + task.status.replace(/\s/g,'')) || task.status}</span>
                       </div>
                     </div>
                   </div>
