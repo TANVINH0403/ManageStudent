@@ -34,21 +34,37 @@ namespace API
                 }});
             });
 
-            
-            var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 
-            // Fix: Npgsql requires UTC DateTime by default.
-            // This switch restores legacy behavior so DateTime.Now (Local) is accepted.
-            if (dbProvider == "PostgreSQL")
-                AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+            //var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+
+            //// Fix: Npgsql requires UTC DateTime by default.
+            //// This switch restores legacy behavior so DateTime.Now (Local) is accepted.
+            //if (dbProvider == "PostgreSQL")
+            //    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+            //builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //{
+            //    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+            //    if (dbProvider == "PostgreSQL")
+            //        options.UseNpgsql(connStr);
+            //    else
+            //        options.UseSqlServer(connStr);
+            //});
+
+            var dbProvider = builder.Configuration["DatabaseProvider"];
+            var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
-                var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
                 if (dbProvider == "PostgreSQL")
+                {
+                    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
                     options.UseNpgsql(connStr);
+                }
                 else
+                {
                     options.UseSqlServer(connStr);
+                }
             });
 
             builder.Services.AddApplicationServices();
@@ -83,9 +99,9 @@ namespace API
 
             // PostgreSQL local: tạo schema từ model, bỏ qua migrations SQL Server
             // PHẢI đặt TRƯỚC app.Run() để BackgroundService không query bảng chưa tạo
-            if (dbProvider == "PostgreSQL")
+
+            using var scope = app.Services.CreateScope();
             {
-                using var scope = app.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 db.Database.EnsureCreated();
                 // Add any missing columns that EnsureCreated won't add to existing tables
