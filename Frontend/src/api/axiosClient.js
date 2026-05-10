@@ -5,6 +5,9 @@ const axiosClient = axios.create({
   baseURL: 'http://localhost:5050/api', // Port backend .NET đang chạy
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
   },
 });
 
@@ -14,6 +17,10 @@ axiosClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    // Prevent GET request caching aggressively
+    if (config.method === 'get') {
+      config.params = { ...config.params, _t: new Date().getTime() };
     }
     return config;
   },

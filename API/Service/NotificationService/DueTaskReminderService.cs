@@ -48,12 +48,14 @@ namespace API.Service.NotificationService
                                 UserId = task.UserId,
                                 TaskId = task.TaskId,
                                 Type = NotificationType.DueSoon,
-                                Message = $"Task '{task.TaskName}' is due soon!"
+                                Message = $"⏰ Task '{task.TaskName}' sẽ đến hạn trong vòng 2 ngày!",
+                                CreatedAt = DateTime.UtcNow
                             };
 
                             context.Notifications.Add(notification);
 
                             task.IsDueSoonNotified = true;
+                            task.LastNotifiedAt = DateTime.UtcNow;
 
                             await _hubContext.Clients
                                 .User(task.UserId.ToString())

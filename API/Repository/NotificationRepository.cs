@@ -1,4 +1,4 @@
-﻿using API.Data;
+using API.Data;
 using API.Entities;
 using API.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +47,18 @@ namespace API.Repository
         public void Update(Notification notification)
         {
             _context.Notifications.Update(notification);
+        }
+
+        public async System.Threading.Tasks.Task MarkAllAsReadAsync(int userId, CancellationToken ct)
+        {
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync(ct);
+
+            foreach (var n in unread)
+                n.IsRead = true;
+
+            await _context.SaveChangesAsync(ct);
         }
     }
 }

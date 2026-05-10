@@ -1,6 +1,5 @@
-﻿using API.Dtos.Notification;
+using API.Dtos.Notification;
 using API.Interfaces;
-using NPOI.SS.Formula.Functions;
 
 namespace API.Service.NotificationService
 {
@@ -48,7 +47,11 @@ namespace API.Service.NotificationService
             await _notifyRepo.SaveChangesAsync(ct);
 
             return true;
+        }
 
+        public async System.Threading.Tasks.Task MarkAllAsRead(int userId, CancellationToken ct)
+        {
+            await _notifyRepo.MarkAllAsReadAsync(userId, ct);
         }
     }
 }

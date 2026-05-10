@@ -1,4 +1,4 @@
-﻿using API.Entities;
+using API.Entities;
 
 namespace API.Interfaces
 {
@@ -10,5 +10,6 @@ namespace API.Interfaces
         System.Threading.Tasks.Task AddAsync(Notification notification);
         void Update(Notification notification);
         System.Threading.Tasks.Task SaveChangesAsync(CancellationToken ct);
+        System.Threading.Tasks.Task MarkAllAsReadAsync(int userId, CancellationToken ct);
     }
 }

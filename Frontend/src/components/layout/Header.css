@@ -147,3 +147,67 @@
   background: var(--border-color);
   border-radius: 3px;
 }
+
+/* ===== GLOBAL SEARCH RESULTS DROPDOWN ===== */
+.search-results-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 340px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.18s ease-out;
+}
+
+.search-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s;
+}
+.search-result-item:hover {
+  background: var(--bg-main);
+}
+.sri-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.sri-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.76rem;
+  color: var(--text-light);
+  padding-left: 16px;
+}
+.search-no-result {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.88rem;
+}
+.search-footer {
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  color: #7c3aed;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  background: var(--bg-main);
+  transition: background 0.15s;
+}
+.search-footer:hover {
+  background: var(--border-color);
+}

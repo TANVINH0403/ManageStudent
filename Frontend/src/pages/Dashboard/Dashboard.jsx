@@ -12,8 +12,8 @@ import {
   FolderOpen, RefreshCw, ArrowUp
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { fetchTasks } from '../../redux/taskSlice';
 import dashboardApi from '../../api/dashboardApi';
-import taskApi from '../../api/taskApi';
 import './Dashboard.css';
 
 const STATUS_COLORS = {
@@ -31,6 +31,7 @@ const Dashboard = () => {
   const { t, locale } = useTranslation();
 
   const categories = useSelector(s => s.categories.items);
+  const reduxTasks = useSelector(s => s.tasks.items);
 
   const statusLabel = (val) => {
     if (val === 'Completed' || val === 2) return t('statusCompleted');
@@ -58,27 +59,22 @@ const Dashboard = () => {
   };
 
   const [stats, setStats] = useState(null);
-  const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Compute upcomingTasks from Redux store — always in sync with Kanban/Tasks
+  const upcomingTasks = reduxTasks
+    .filter(t => t.status !== 'Completed' && t.deadline)
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+    .slice(0, 5);
 
   useEffect(() => {
     if (categories.length === 0) dispatch(fetchCategories());
+    dispatch(fetchTasks());
 
     const fetchAll = async () => {
       try {
-        const [dashData, taskData] = await Promise.all([
-          dashboardApi.getDashboard(),
-          taskApi.getAll({ pageSize: 100 }),
-        ]);
+        const dashData = await dashboardApi.getDashboard();
         setStats(dashData);
-
-        // Build upcoming deadlines: non-completed, sorted by dueDate asc, top 5
-        const items = Array.isArray(taskData) ? taskData : (taskData?.items ?? taskData?.data ?? []);
-        const upcoming = items
-          .filter(t => t.status !== 2 && t.dueDate)
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-          .slice(0, 5);
-        setUpcomingTasks(upcoming);
       } catch (err) {
         console.error('Dashboard fetch failed:', err);
       } finally {
@@ -154,7 +150,8 @@ const Dashboard = () => {
 
       {/* KPI CARDS */}
       <div className="kpi-row">
-        <div className="kpi-card clickable" onClick={() => navigate('/tasks')}>
+        {/* Tổng Task → /tasks không filter */}
+        <div className="kpi-card clickable" onClick={() => navigate('/tasks', { state: { filter: 'All' } })}>
           <div className="kpi-info">
             <span className="kpi-label">{t('totalTasks')}</span>
             <span className="kpi-value">{total}</span>
@@ -165,7 +162,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="kpi-card clickable" onClick={() => navigate('/tasks')}>
+        {/* Hoàn thành → /tasks filter Completed */}
+        <div className="kpi-card clickable" onClick={() => navigate('/tasks', { state: { filter: 'Completed' } })}>
           <div className="kpi-info">
             <span className="kpi-label">{t('completedTasks')}</span>
             <span className="kpi-value">{completed}</span>
@@ -176,7 +174,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="kpi-card clickable" onClick={() => navigate('/kanban')}>
+        {/* Đang thực hiện → /tasks filter In Progress */}
+        <div className="kpi-card clickable" onClick={() => navigate('/tasks', { state: { filter: 'In Progress' } })}>
           <div className="kpi-info">
             <span className="kpi-label">{t('inProgress')}</span>
             <span className="kpi-value">{inProgress}</span>
@@ -187,7 +186,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="kpi-card clickable" onClick={() => navigate('/tasks')}>
+        {/* Quá hạn → /tasks filter overdue */}
+        <div className="kpi-card clickable" onClick={() => navigate('/tasks', { state: { filter: 'Overdue' } })}>
           <div className="kpi-info">
             <span className="kpi-label">{t('overdueTasks')}</span>
             <span className="kpi-value">{overdue}</span>
@@ -304,21 +304,19 @@ const Dashboard = () => {
             </thead>
             <tbody>
               {upcomingTasks.length > 0 ? upcomingTasks.map((task) => {
-                const isCompleted = task.status === 2 || task.status === 'Completed';
-                const isInProgress = task.status === 1 || task.status === 'In Progress' || task.status === 'InProgress';
+                // Redux normalized tasks use string status/priority
+                const isCompleted = task.status === 'Completed';
+                const isInProgress = task.status === 'In Progress';
                 const statusStr = isCompleted ? 'Completed' : isInProgress ? 'InProgress' : 'Pending';
-                
-                const isHigh = task.priority === 2 || task.priority === 'High';
-                const isMedium = task.priority === 1 || task.priority === 'Medium';
-                const priorityStr = isHigh ? 'High' : isMedium ? 'Medium' : 'Low';
-                
+                const priorityStr = task.priority ?? 'Medium';
+
                 return (
                   <tr
-                    key={task.taskId}
+                    key={task.id}
                     className="clickable-row"
-                    onClick={() => navigate('/tasks', { state: { openTaskId: task.taskId } })}
+                    onClick={() => navigate('/tasks', { state: { openTaskId: task.id } })}
                   >
-                    <td className="fw-500 dash-task-name">{task.taskName}</td>
+                    <td className="fw-500 dash-task-name">{task.title}</td>
                     <td>
                       <span className="cell-category" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 500 }}>
                         <FolderOpen size={13} color="#94a3b8" />
@@ -327,9 +325,9 @@ const Dashboard = () => {
                     </td>
                     <td>
                       <div className="deadline-date" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem' }}>
-                        <Calendar size={13} color={task.dueDate && new Date(task.dueDate) < new Date() ? '#ef4444' : '#94a3b8'} />
-                        <span style={{ color: task.dueDate && new Date(task.dueDate) < new Date() ? '#ef4444' : 'var(--text-main)' }}>
-                          {formatDate(task.dueDate)}
+                        <Calendar size={13} color={task.deadline && new Date(task.deadline) < new Date() ? '#ef4444' : '#94a3b8'} />
+                        <span style={{ color: task.deadline && new Date(task.deadline) < new Date() ? '#ef4444' : 'var(--text-main)' }}>
+                          {formatDate(task.deadline)}
                         </span>
                       </div>
                     </td>

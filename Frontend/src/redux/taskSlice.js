@@ -2,20 +2,25 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import taskApi from '../api/taskApi';
 
-// ── Enum mapping: BE (số) ↔ FE (string) ──────────────────────────────────────
-export const STATUS_MAP = { 0: 'Pending', 1: 'In Progress', 2: 'Completed' };
+// ── Enum mapping: BE (số) ↔ FE (string) ────────────────────────────────────────
+export const STATUS_MAP = { 0: 'Pending', 1: 'In Progress', 2: 'Completed', Todo: 'Pending', InProgress: 'In Progress', Completed: 'Completed' };
 export const STATUS_TO_NUM = { 'Pending': 0, 'In Progress': 1, 'Completed': 2 };
-export const PRIORITY_MAP = { 0: 'Low', 1: 'Medium', 2: 'High' };
+// BE uses JsonStringEnumConverter → PATCH /status must send string enum name (not number)
+export const STATUS_TO_ENUM_NAME = { 'Pending': 'Todo', 'In Progress': 'InProgress', 'Completed': 'Completed' };
+export const PRIORITY_MAP = { 0: 'Low', 1: 'Medium', 2: 'High', Low: 'Low', Medium: 'Medium', High: 'High' };
 export const PRIORITY_TO_NUM = { 'Low': 0, 'Medium': 1, 'High': 2 };
+export const PRIORITY_TO_ENUM_NAME = { 'Low': 'Low', 'Medium': 'Medium', 'High': 'High' };
 
-// Chuẩn hoá task từ BE → FE (đổi tên field, đổi enum số → string)
+// Chuẩn hoà task từ BE → FE (đổi tên field, đổi enum số/string → FE string)
 const normalize = (t) => ({
   id:          t.taskId,
   title:       t.taskName,
   description: t.description ?? '',
   deadline:    t.dueDate ? t.dueDate.split('T')[0] : '',
-  status:      STATUS_MAP[t.status] ?? 'Pending',
-  priority:    PRIORITY_MAP[t.priority] ?? 'Medium',
+  // BE may return number (0,1,2) or string enum name ("Todo","InProgress","Completed")
+  status:      STATUS_MAP[t.status] ?? STATUS_MAP[String(t.status)] ?? 'Pending',
+  // BE priority also may be number or string
+  priority:    PRIORITY_MAP[t.priority] ?? PRIORITY_MAP[String(t.priority)] ?? 'Medium',
   categoryId:  t.categoryId ?? null,
   parentId:    t.parentId ?? null,
   tags:        t.tags ?? [],
@@ -30,9 +35,10 @@ export const fetchTasks = createAsyncThunk(
   'tasks/fetchAll',
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await taskApi.getAll(params);
-      // BE trả về { items, totalCount, page, pageSize } hoặc array
-      const items = Array.isArray(res) ? res : (res.items ?? res.data ?? []);
+      // Pass pageSize=1000 to get all tasks (BE default is only 10)
+      const res = await taskApi.getAll({ pageSize: 1000, ...params });
+      // BE returns: { data: [...], total, page, pageSize }
+      const items = Array.isArray(res) ? res : (res.data ?? res.items ?? []);
       return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi tải danh sách task');
@@ -53,10 +59,10 @@ export const createTask = createAsyncThunk(
         parentId:    formData.parentId ?? null,
         tagNames:    formData.tags ?? [],
       };
-      const res = await taskApi.create(payload);
-      // Sau khi tạo, fetch lại toàn bộ để lấy đúng ID từ DB
-      const allRes = await taskApi.getAll();
-      const items = Array.isArray(allRes) ? allRes : (allRes.items ?? allRes.data ?? []);
+      await taskApi.create(payload);
+      // Re-fetch all tasks with large pageSize
+      const allRes = await taskApi.getAll({ pageSize: 1000 });
+      const items = Array.isArray(allRes) ? allRes : (allRes.data ?? allRes.items ?? []);
       return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi tạo task');
@@ -72,15 +78,16 @@ export const updateTask = createAsyncThunk(
         taskName:    data.title,
         description: data.description,
         dueDate:     data.deadline ? new Date(data.deadline).toISOString() : null,
-        status:      STATUS_TO_NUM[data.status] ?? 0,
-        priority:    PRIORITY_TO_NUM[data.priority] ?? 1,
+        // BE uses JsonStringEnumConverter → send enum name strings
+        status:      STATUS_TO_ENUM_NAME[data.status] ?? 'Todo',
+        priority:    PRIORITY_TO_ENUM_NAME[data.priority] ?? 'Medium',
         categoryId:  data.categoryId ? Number(data.categoryId) : null,
         progress:    data.progress ?? 0,
       };
       await taskApi.update(id, payload);
-      // Re-fetch to get fresh data from server
-      const allRes = await taskApi.getAll();
-      const items = Array.isArray(allRes) ? allRes : (allRes.items ?? allRes.data ?? []);
+      // Re-fetch all with large pageSize
+      const allRes = await taskApi.getAll({ pageSize: 1000 });
+      const items = Array.isArray(allRes) ? allRes : (allRes.data ?? allRes.items ?? []);
       return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi cập nhật task');
@@ -88,13 +95,18 @@ export const updateTask = createAsyncThunk(
   }
 );
 
+
 export const updateTaskStatus = createAsyncThunk(
   'tasks/updateStatus',
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const statusNum = STATUS_TO_NUM[status] ?? 0;
-      await taskApi.updateStatus(id, statusNum);
-      return { id, status };
+      // BE uses JsonStringEnumConverter → must send enum name string ("Todo", "InProgress", "Completed")
+      const enumName = STATUS_TO_ENUM_NAME[status] ?? 'Todo';
+      await taskApi.updateStatus(id, enumName);
+      // Re-fetch full list with large pageSize to ensure all tasks are synced
+      const allRes = await taskApi.getAll({ pageSize: 1000 });
+      const items = Array.isArray(allRes) ? allRes : (allRes.data ?? allRes.items ?? []);
+      return items.map(normalize);
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi cập nhật trạng thái');
     }
@@ -154,11 +166,22 @@ const taskSlice = createSlice({
         }
       });
 
-    // updateTaskStatus
+    // updateTaskStatus — DO NOT set loading state to avoid blocking UI
     builder
       .addCase(updateTaskStatus.fulfilled, (state, { payload }) => {
-        const task = state.items.find(t => t.id === payload.id);
-        if (task) task.status = payload.status;
+        if (Array.isArray(payload)) {
+          // Preserve local-only notes
+          const notesMap = {};
+          state.items.forEach(t => { notesMap[t.id] = t.notes; });
+          state.items = payload.map(t => ({ ...t, notes: notesMap[t.id] ?? [] }));
+        } else {
+          // Fallback: optimistic single update
+          const task = state.items.find(t => t.id === payload.id);
+          if (task) task.status = payload.status;
+        }
+      })
+      .addCase(updateTaskStatus.rejected, (state, { payload }) => {
+        state.error = payload;
       });
 
     // deleteTask

@@ -4,28 +4,21 @@ import { createTask, fetchTasks } from '../../redux/taskSlice';
 import { fetchCategories } from '../../redux/categorySlice';
 import {
   ChevronLeft, ChevronRight, Plus, X,
-  Filter, MoreHorizontal, CalendarDays
+  Filter, MoreHorizontal, CalendarDays,
+  AlertCircle, CheckCircle2, Clock, RefreshCw
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import './Calendar.css';
 
-// Palette for category colors (cycles if more than 4 categories)
 const COLOR_PALETTE = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
 const BG_PALETTE    = ['#dbeafe', '#dcfce7', '#fef3c7', '#fee2e2', '#ede9fe', '#cffafe'];
 
-const MONTH_NAMES = [
-  'Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
-  'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12',
-];
-const DAY_NAMES = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'];
-
 const Calendar = () => {
-  const dispatch   = useDispatch();
-  const { t, locale } = useTranslation();
-  const tasks      = useSelector(s => s.tasks.items);
-  const categories = useSelector(s => s.categories.items);
+  const dispatch        = useDispatch();
+  const { t, locale }  = useTranslation();
+  const tasks           = useSelector(s => s.tasks.items);
+  const categories      = useSelector(s => s.categories.items);
 
-  // Build color maps from real categories
   const catColorMap = {};
   const catBgMap    = {};
   categories.forEach((cat, i) => {
@@ -39,13 +32,12 @@ const Calendar = () => {
   }, [dispatch]);
 
   const today = new Date();
-  const [viewDate, setViewDate]         = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDay, setSelectedDay]   = useState(null);   // { year, month, day }
-  const [isModalOpen, setIsModalOpen]   = useState(false);
-  const [quickTitle, setQuickTitle]     = useState('');
-  const [modalForm, setModalForm]       = useState({
-    title: '', deadline: '', categoryId: '', priority: 'Medium',
-  });
+  const [viewDate, setViewDate]       = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [quickTitle, setQuickTitle]   = useState('');
+  const [quickError, setQuickError]   = useState('');
+  const [modalForm, setModalForm]     = useState({ title: '', deadline: '', categoryId: '', priority: 'Medium' });
 
   const year  = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -54,96 +46,123 @@ const Calendar = () => {
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
   const goToday   = () => { setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); setSelectedDay(null); };
 
-  /* Build calendar grid: 6 rows × 7 cols (Mon…Sun) */
-  const firstWeekDay = new Date(year, month, 1).getDay(); // 0=Sun
-  const startOffset  = firstWeekDay === 0 ? 6 : firstWeekDay - 1; // Mon-based offset
+  const firstWeekDay = new Date(year, month, 1).getDay();
+  const startOffset  = firstWeekDay === 0 ? 6 : firstWeekDay - 1;
   const daysInMonth  = new Date(year, month + 1, 0).getDate();
   const daysInPrev   = new Date(year, month, 0).getDate();
 
-  // Build cells: { day, month, year, isCurrentMonth }
   const cells = [];
-  // Prev month tail
   for (let i = startOffset - 1; i >= 0; i--) {
     const d = daysInPrev - i;
-    cells.push({ day: d, month: month - 1 < 0 ? 11 : month - 1, year: month - 1 < 0 ? year - 1 : year, current: false });
+    cells.push({ day: d, month: month === 0 ? 11 : month - 1, year: month === 0 ? year - 1 : year, current: false });
   }
-  // Current month
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ day: d, month, year, current: true });
   }
-  // Next month fill to complete rows
   const remaining = cells.length % 7 === 0 ? 0 : 7 - (cells.length % 7);
   for (let d = 1; d <= remaining; d++) {
-    cells.push({ day: d, month: month + 1 > 11 ? 0 : month + 1, year: month + 1 > 11 ? year + 1 : year, current: false });
+    cells.push({ day: d, month: month === 11 ? 0 : month + 1, year: month === 11 ? year + 1 : year, current: false });
   }
 
   const getTasksForCell = (cell) =>
-    tasks.filter(t => {
-      const td = new Date(t.deadline);
+    tasks.filter(task => {
+      const td = new Date(task.deadline);
       return td.getFullYear() === cell.year && td.getMonth() === cell.month && td.getDate() === cell.day;
     });
 
-  const isToday = (cell) =>
-    cell.year === today.getFullYear() && cell.month === today.getMonth() && cell.day === today.getDate();
+  const isToday    = (cell) => cell.year === today.getFullYear() && cell.month === today.getMonth() && cell.day === today.getDate();
+  const isSelected = (cell) => selectedDay && cell.year === selectedDay.year && cell.month === selectedDay.month && cell.day === selectedDay.day;
 
-  const isSelected = (cell) =>
-    selectedDay && cell.year === selectedDay.year && cell.month === selectedDay.month && cell.day === selectedDay.day;
-
-  /* Quick add */
   const handleQuickAdd = (e) => {
-    if (e.key === 'Enter' && quickTitle.trim() && selectedDay) {
-      const pad = (n) => String(n).padStart(2, '0');
-      dispatch(createTask({
-        title: quickTitle,
-        description: '',
-        categoryId: categories[0]?.id ?? null,
-        priority: 'Medium',
-        status: 'Pending',
-        progress: 0,
-        deadline: `${selectedDay.year}-${pad(selectedDay.month + 1)}-${pad(selectedDay.day)}`,
-      }));
-      setQuickTitle('');
+    if (e.key !== 'Enter' || !quickTitle.trim() || !selectedDay) return;
+    if (categories.length === 0) {
+      setQuickError(t('noCategoryHint') || 'Vui lòng tạo danh mục trước');
+      return;
     }
+    setQuickError('');
+    const pad = (n) => String(n).padStart(2, '0');
+    dispatch(createTask({
+      title:      quickTitle,
+      description: '',
+      categoryId:  categories[0].id,
+      priority:   'Medium',
+      status:     'Pending',
+      progress:   0,
+      deadline:   `${selectedDay.year}-${pad(selectedDay.month + 1)}-${pad(selectedDay.day)}`,
+    }));
+    setQuickTitle('');
   };
 
-  /* Modal add */
   const handleModalSubmit = (e) => {
     e.preventDefault();
-    if (!modalForm.title.trim() || !modalForm.deadline) return;
+    if (!modalForm.title.trim() || !modalForm.deadline || categories.length === 0) return;
     dispatch(createTask({
-      title: modalForm.title,
+      title:       modalForm.title,
       description: '',
-      categoryId: Number(modalForm.categoryId) || (categories[0]?.id ?? null),
-      priority: modalForm.priority,
-      status: 'Pending',
-      progress: 0,
-      deadline: modalForm.deadline,
+      categoryId:  Number(modalForm.categoryId) || categories[0].id,
+      priority:    modalForm.priority,
+      status:      'Pending',
+      progress:    0,
+      deadline:    modalForm.deadline,
     }));
     setModalForm({ title: '', deadline: '', categoryId: '', priority: 'Medium' });
     setIsModalOpen(false);
   };
 
   const selectedDayTasks = selectedDay ? getTasksForCell(selectedDay) : [];
-  const catName = (id) => categories.find(c => c.id === id)?.name ?? 'Khác';
+
+  const catName = (id) => {
+    const found = categories.find(c => c.id === id);
+    return found ? found.name : (t('otherCategory') || 'Khác');
+  };
+
+  const weekDayNames = [1, 2, 3, 4, 5, 6, 7].map(d =>
+    new Date(2024, 0, d).toLocaleDateString(locale, { weekday: 'short' })
+  );
+
+  const statusIcon = (status) => {
+    if (status === 'Completed')  return <CheckCircle2 size={11} />;
+    if (status === 'In Progress') return <RefreshCw size={11} />;
+    return <Clock size={11} />;
+  };
+
+  const statusClass = (status) => {
+    if (status === 'Completed')   return 'Completed';
+    if (status === 'In Progress') return 'InProgress';
+    return 'Pending';
+  };
 
   return (
     <div className="calendar-page">
 
-      {/* ── PAGE HEADER ── */}
       <div className="cal-header">
         <div className="cal-title-area">
           <h1>{t('calendar')}</h1>
           <p>{t('manageTasks')}</p>
         </div>
-        <button className="cal-btn-add" onClick={() => setIsModalOpen(true)}>
+        <button
+          className="cal-btn-add"
+          onClick={() => setIsModalOpen(true)}
+          disabled={categories.length === 0}
+          title={categories.length === 0 ? (t('noCategoryHint') || 'Tạo danh mục trước') : ''}
+        >
           <Plus size={17} /> {t('add')}
         </button>
       </div>
 
-      {/* ── CALENDAR CARD ── */}
-      <div className="cal-card">
+      {categories.length === 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#fef3c7', border: '1px solid #fde68a',
+          borderRadius: 8, padding: '10px 16px', marginBottom: 16,
+          color: '#92400e', fontSize: '0.9rem'
+        }}>
+          <AlertCircle size={16} color="#d97706" />
+          {t('noCategoryHint') || 'Bạn cần tạo ít nhất một danh mục để thêm task vào lịch.'}
+        </div>
+      )}
 
-        {/* Month nav bar */}
+      <div className="cal-card">
         <div className="cal-nav-bar">
           <div className="cal-nav-left">
             <button className="cal-nav-btn" onClick={prevMonth}><ChevronLeft size={18} /></button>
@@ -153,53 +172,45 @@ const Calendar = () => {
             </span>
             <button className="cal-nav-btn" onClick={nextMonth}><ChevronRight size={18} /></button>
           </div>
-
           <div className="cal-nav-right">
             <button className="cal-nav-btn" onClick={prevMonth}><ChevronLeft size={18} /></button>
             <button className="cal-nav-btn" onClick={nextMonth}><ChevronRight size={18} /></button>
             <button className="cal-today-btn" onClick={goToday}>{t('todayStr') || 'Hôm nay'}</button>
             <div className="cal-view-dropdown">
-              {t('month')} <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
+              {t('month') || 'Tháng'} <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
             </div>
             <button className="cal-icon-btn"><Filter size={16} /></button>
             <button className="cal-icon-btn"><MoreHorizontal size={16} /></button>
           </div>
         </div>
 
-        {/* Day-of-week headers */}
         <div className="cal-weekday-row">
-          {[1, 2, 3, 4, 5, 6, 7].map(d => (
-            <div key={d} className="cal-weekday-cell">
-              {new Date(2024, 0, d).toLocaleDateString(locale, { weekday: 'short' })}
-            </div>
+          {weekDayNames.map((name, i) => (
+            <div key={i} className="cal-weekday-cell">{name}</div>
           ))}
         </div>
 
-        {/* Calendar grid */}
         <div className="cal-grid">
           {cells.map((cell, idx) => {
             const cellTasks  = getTasksForCell(cell);
-            const todayCell  = isToday(cell);
-            const selCell    = isSelected(cell);
             const maxVisible = 3;
-
             return (
               <div
                 key={idx}
-                className={`cal-day ${!cell.current ? 'other-month' : ''} ${todayCell ? 'is-today' : ''} ${selCell ? 'is-selected' : ''}`}
+                className={`cal-day${!cell.current ? ' other-month' : ''}${isToday(cell) ? ' is-today' : ''}${isSelected(cell) ? ' is-selected' : ''}`}
                 onClick={() => setSelectedDay({ year: cell.year, month: cell.month, day: cell.day })}
               >
-                <span className={`cal-day-num ${todayCell ? 'today-circle' : ''}`}>{cell.day}</span>
+                <span className={`cal-day-num${isToday(cell) ? ' today-circle' : ''}`}>{cell.day}</span>
                 <div className="cal-day-tasks">
                   {cellTasks.slice(0, maxVisible).map(task => (
                     <div key={task.id} className="cal-task-pill" title={task.title}
-                      style={{ background: catBgMap[task.categoryId] ?? 'var(--bg-main)' }}>
-                      <span className="cal-dot" style={{ background: catColorMap[task.categoryId] ?? '#64748b' }} />
-                      <span className="cal-pill-text" style={{ color: catColorMap[task.categoryId] ?? 'var(--text-main)' }}>{task.title}</span>
+                      style={{ background: catBgMap[task.categoryId] || 'var(--bg-main)' }}>
+                      <span className="cal-dot" style={{ background: catColorMap[task.categoryId] || '#64748b' }} />
+                      <span className="cal-pill-text" style={{ color: catColorMap[task.categoryId] || 'var(--text-main)' }}>{task.title}</span>
                     </div>
                   ))}
                   {cellTasks.length > maxVisible && (
-                    <div className="cal-more-pill">+{cellTasks.length - maxVisible} thêm</div>
+                    <div className="cal-more-pill">+{cellTasks.length - maxVisible} {t('more') || 'thêm'}</div>
                   )}
                 </div>
               </div>
@@ -207,58 +218,77 @@ const Calendar = () => {
           })}
         </div>
 
-        {/* ── LEGEND (real categories from API) ── */}
         <div className="cal-legend">
           {categories.map((cat) => (
             <div key={cat.id} className="cal-legend-item">
-              <span className="cal-legend-dot" style={{ background: catColorMap[cat.id] ?? '#64748b' }} />
+              <span className="cal-legend-dot" style={{ background: catColorMap[cat.id] || '#64748b' }} />
               <span>{cat.name}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── DAY DETAIL SIDE PANEL ── */}
       {selectedDay && <div className="cal-overlay" onClick={() => setSelectedDay(null)} />}
-      <div className={`cal-day-panel ${selectedDay ? 'open' : ''}`}>
+      <div className={`cal-day-panel${selectedDay ? ' open' : ''}`}>
         {selectedDay && (
           <>
             <div className="cdp-header">
               <div>
-                <h2>Ngày {selectedDay.day} {MONTH_NAMES[selectedDay.month]}</h2>
-                <p>{selectedDayTasks.length} công việc</p>
+                <h2>
+                  {new Date(selectedDay.year, selectedDay.month, selectedDay.day)
+                    .toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}
+                </h2>
+                <p>{selectedDayTasks.length} {t('tasksWord') || 'công việc'}</p>
               </div>
               <button className="cal-close-btn" onClick={() => setSelectedDay(null)}><X size={20} /></button>
             </div>
             <div className="cdp-body">
-              {/* Quick add */}
               <div className="cdp-quick-add">
                 <Plus size={16} color="#7c3aed" />
                 <input
-                  type="text" placeholder="Thêm công việc (Enter)..."
+                  type="text"
+                  placeholder={
+                    categories.length === 0
+                      ? (t('noCategoryHint') || 'Tạo danh mục trước...')
+                      : (t('quickAddPlaceholder') || 'Thêm công việc (Enter)...')
+                  }
                   value={quickTitle}
-                  onChange={e => setQuickTitle(e.target.value)}
+                  onChange={e => { setQuickTitle(e.target.value); setQuickError(''); }}
                   onKeyDown={handleQuickAdd}
                   autoFocus
+                  disabled={categories.length === 0}
                 />
               </div>
+              {quickError && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#dc2626', fontSize: '0.82rem', padding: '4px 8px' }}>
+                  <AlertCircle size={13} /> {quickError}
+                </div>
+              )}
 
-              {/* Task list */}
               <div className="cdp-task-list">
                 {selectedDayTasks.length > 0 ? selectedDayTasks.map(task => (
                   <div key={task.id} className="cdp-task-item">
-                    <span className="cdp-dot" style={{ background: catColorMap[task.categoryId] ?? '#64748b' }} />
+                    <span className="cdp-dot" style={{ background: catColorMap[task.categoryId] || '#64748b' }} />
                     <div className="cdp-task-info">
-                      <span className={`cdp-task-title ${task.status === 'Completed' ? 'done' : ''}`}>{task.title}</span>
+                      <span className={`cdp-task-title${task.status === 'Completed' ? ' done' : ''}`}>{task.title}</span>
                       <div className="cdp-task-meta">
-                        <span className={`cdp-badge ${task.priority}`}>{(t(`priority${task.priority}`) || task.priority).toUpperCase()}</span>
+                        <span className={`cdp-badge ${task.priority}`}>
+                          {(t(`priority${task.priority}`) || task.priority).toUpperCase()}
+                        </span>
                         <span className="cdp-cat">{catName(task.categoryId)}</span>
-                        <span className={`cdp-status ${task.status.replace(/\s/g,'')}`}>{t('status' + task.status.replace(/\s/g,'')) || task.status}</span>
+                        <span className={`cdp-status ${statusClass(task.status)}`}>
+                          {statusIcon(task.status)}
+                          {task.status === 'Completed' ? (t('statusCompleted') || 'Hoàn thành') :
+                           task.status === 'In Progress' ? (t('statusInProgress') || 'Đang làm') :
+                           (t('statusPending') || 'Chờ')}
+                        </span>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="cdp-empty">Không có công việc. Thêm mới bên trên! 🎉</div>
+                  <div className="cdp-empty">
+                    {t('noTasksForDay') || 'Không có công việc. Thêm mới bên trên!'}
+                  </div>
                 )}
               </div>
             </div>
@@ -266,47 +296,62 @@ const Calendar = () => {
         )}
       </div>
 
-      {/* ── MODAL THÊM SỰ KIỆN ── */}
       {isModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
           <div className="create-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Tạo Sự Kiện Mới</h3>
+              <h3>{t('createNewTask') || 'Tạo Sự Kiện Mới'}</h3>
               <button className="btn-close" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
             </div>
             <form className="modal-body" onSubmit={handleModalSubmit}>
               <div className="form-group">
-                <label>Tên công việc *</label>
-                <input type="text" placeholder="Nhập tên..." required
+                <label>{t('taskTitle') || 'Tên công việc'} *</label>
+                <input
+                  type="text"
+                  placeholder={t('taskNameInput') || 'Nhập tên...'}
+                  required
                   value={modalForm.title}
-                  onChange={e => setModalForm({ ...modalForm, title: e.target.value })} />
+                  onChange={e => setModalForm({ ...modalForm, title: e.target.value })}
+                />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Ngày *</label>
-                  <input type="date" required value={modalForm.deadline}
-                    onChange={e => setModalForm({ ...modalForm, deadline: e.target.value })} />
+                  <label>{t('deadline') || 'Ngày'} *</label>
+                  <input
+                    type="date"
+                    required
+                    value={modalForm.deadline}
+                    onChange={e => setModalForm({ ...modalForm, deadline: e.target.value })}
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Danh mục</label>
-                  <select value={modalForm.categoryId}
-                    onChange={e => setModalForm({ ...modalForm, categoryId: e.target.value })}>
+                  <label>{t('category') || 'Danh mục'}</label>
+                  <select
+                    value={modalForm.categoryId}
+                    onChange={e => setModalForm({ ...modalForm, categoryId: e.target.value })}
+                  >
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
               </div>
               <div className="form-group">
-                <label>Mức ưu tiên</label>
-                <select value={modalForm.priority}
-                  onChange={e => setModalForm({ ...modalForm, priority: e.target.value })}>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
+                <label>{t('priority') || 'Mức ưu tiên'}</label>
+                <select
+                  value={modalForm.priority}
+                  onChange={e => setModalForm({ ...modalForm, priority: e.target.value })}
+                >
+                  <option value="High">{t('priorityHigh') || 'Cao'}</option>
+                  <option value="Medium">{t('priorityMedium') || 'Trung bình'}</option>
+                  <option value="Low">{t('priorityLow') || 'Thấp'}</option>
                 </select>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>Hủy</button>
-                <button type="submit" className="btn-primary">Lưu Sự Kiện</button>
+                <button type="button" className="btn-outline" onClick={() => setIsModalOpen(false)}>
+                  {t('cancel') || 'Hủy'}
+                </button>
+                <button type="submit" className="btn-primary" disabled={categories.length === 0}>
+                  {t('create') || 'Lưu Sự Kiện'}
+                </button>
               </div>
             </form>
           </div>

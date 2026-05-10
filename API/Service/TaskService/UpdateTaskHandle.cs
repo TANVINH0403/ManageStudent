@@ -1,8 +1,6 @@
 using API.Dtos.Task;
 using API.Interfaces;
 using API.UnitOfWork;
-using NPOI.OpenXmlFormats.Spreadsheet;
-using NPOI.POIFS.Properties;
 
 namespace API.Service.TaskService
 {
@@ -34,7 +32,11 @@ namespace API.Service.TaskService
                 task.TaskName = request.TaskName;
             }
 
-            if (!string.IsNullOrEmpty(request.Description))
+            if (request.ClearDescription)
+            {
+                task.Description = string.Empty;
+            }
+            else if (request.Description != null)
             {
                 task.Description = request.Description;
             }
@@ -98,6 +100,7 @@ namespace API.Service.TaskService
                 else
                 {
                     task.CompletedAt = null;
+                    task.IsDueSoonNotified = false;
                 }
             }
 

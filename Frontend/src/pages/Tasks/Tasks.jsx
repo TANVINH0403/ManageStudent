@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes } from '../../redux/taskSlice';
+import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes, updateTaskStatus } from '../../redux/taskSlice';
 import { fetchCategories, createCategory } from '../../redux/categorySlice';
 import { fetchTags } from '../../redux/tagSlice';
 import taskFileApi from '../../api/taskFileApi';
@@ -9,7 +9,7 @@ import {
   Search, Plus, MoreVertical, CheckSquare, Square,
   ChevronLeft, ChevronRight, X, Calendar, Flag, AlignLeft,
   Tag, RefreshCw, LayoutGrid, List, FolderOpen, ChevronDown,
-  ArrowUp, Clock, CheckCircle2, AlertCircle, Loader2, Edit2,
+  ArrowUp, Clock, CheckCircle2, AlertCircle, AlertTriangle, Loader2, Edit2,
   Database, BookOpen, Code2, Zap, Layers, MessageSquare, Send,
   Paperclip, Trash2, Upload, Users, Trophy, Folder, FileText, Palette,
   FlaskConical, Settings2, Star, Heart, Globe, Award, Briefcase, Target, Lightbulb, Rocket, Music, Camera, ShieldCheck
@@ -216,9 +216,9 @@ export const CreateTaskModal = ({ categories, tags, dispatch, onClose, onSave, i
             <div className="form-group">
               <label>{t('priority')}</label>
               <select value={form.priority} onChange={e => set('priority', e.target.value)}>
-                <option value="High">🔴 {t('priorityHigh')}</option>
-                <option value="Medium">🟡 {t('priorityMedium')}</option>
-                <option value="Low">🟢 {t('priorityLow')}</option>
+                <option value="High">{t('priorityHigh')}</option>
+                <option value="Medium">{t('priorityMedium')}</option>
+                <option value="Low">{t('priorityLow')}</option>
               </select>
             </div>
             <div className="form-group">
@@ -316,15 +316,30 @@ const Tasks = () => {
     if (categories.length === 0) dispatch(fetchCategories());
   }, [dispatch]);
 
-  // Open task details if navigated from Dashboard
+  // Áp dụng filter khi được navigate từ Dashboard
+  useEffect(() => {
+    const f = location.state?.filter;
+    if (f) {
+      if (f === 'All') {
+        setStatusFilter('All');
+      } else if (f === 'Overdue') {
+        // Dashboard card "Quá hạn" → không có filter riêng, chỉ hiển tất cả
+        setStatusFilter('All');
+      } else {
+        setStatusFilter(f);
+      }
+      setCurrentPage(1);
+      navigate(location.pathname, { replace: true, state: { ...location.state, filter: undefined } });
+    }
+  }, [location.state?.filter]);
+
+  // Mở task detail nếu navigate từ Dashboard
   useEffect(() => {
     if (location.state?.openTaskId && tasks.length > 0) {
       const taskToOpen = tasks.find(t => t.id === location.state.openTaskId);
       if (taskToOpen) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTask(taskToOpen);
         setEditTask({ ...taskToOpen });
-        // Optional: clear state so it doesn't reopen on refresh
         navigate(location.pathname, { replace: true, state: {} });
       }
     }
@@ -355,13 +370,26 @@ const Tasks = () => {
     const s = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
               t.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const c = categoryFilter === 'All' || t.categoryId === Number(categoryFilter);
-    const st = statusFilter   === 'All' || t.status    === statusFilter;
-    const p  = priorityFilter === 'All' || t.priority  === priorityFilter;
+    const st = statusFilter === 'All' || t.status === statusFilter;
+    const p  = priorityFilter === 'All' || t.priority === priorityFilter;
     return s && c && st && p;
   });
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  // Sắp xếp: task quá hạn lên trên đầu, tiếp theo là task gần deadline nhất,
+  // task không có deadline và task đã hoàn thành xuống cuối
+  const sorted = [...filtered].sort((a, b) => {
+    const aCompleted = a.status === 'Completed';
+    const bCompleted = b.status === 'Completed';
+    // Hoàn thành → xuống cuối
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+    // Cả hai hoặc không ai hoàn thành → so deadline
+    const aDate = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const bDate = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    return aDate - bDate; // deadline gần hơn lên trước
+  });
+
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const paginated  = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Summary
   const summary = {
@@ -381,17 +409,42 @@ const Tasks = () => {
     setSelectedTasks(prev => prev.length === paginated.length ? [] : paginated.map(t => t.id));
 
   const handleDeleteTask = (id) => {
-    dispatch(deleteTask(id));
-    setOpenMenuId(null);
-    if (activeTask?.id === id) setActiveTask(null);
+    if (window.confirm(t('confirmDelete') || 'Bạn có chắc chắn muốn xóa task này?')) {
+      dispatch(deleteTask(id));
+      setOpenMenuId(null);
+      if (activeTask?.id === id) setActiveTask(null);
+      setSelectedTasks(prev => prev.filter(i => i !== id));
+    }
+  };
+
+  // ── Bulk Actions ──────────────────────────────────────────────────────────
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Xóa ${selectedTasks.length} task đã chọn?`)) return;
+    await Promise.all(selectedTasks.map(id => dispatch(deleteTask(id))));
+    setSelectedTasks([]);
+    if (activeTask && selectedTasks.includes(activeTask.id)) setActiveTask(null);
+  };
+
+  const handleBulkComplete = async () => {
+    await Promise.all(selectedTasks.map(id => dispatch(updateTaskStatus({ id, status: 'Completed' }))));
+    setSelectedTasks([]);
+  };
+
+  const handleBulkInProgress = async () => {
+    await Promise.all(selectedTasks.map(id => dispatch(updateTaskStatus({ id, status: 'In Progress' }))));
+    setSelectedTasks([]);
   };
 
   const handleSaveDetail = async () => {
     if (!editTask) return;
     setSaving(true);
-    await dispatch(updateTask({ id: editTask.id, data: editTask }));
-    setActiveTask(editTask);
+    const result = await dispatch(updateTask({ id: editTask.id, data: editTask }));
     setSaving(false);
+    // Sync activeTask from Redux store (has fresh data from re-fetch)
+    if (result.payload && Array.isArray(result.payload)) {
+      const updated = result.payload.find(t => t.id === editTask.id);
+      if (updated) setActiveTask({ ...updated, notes: editTask.notes ?? [] });
+    }
   };
 
   const handleAddNote = () => {
@@ -403,7 +456,6 @@ const Tasks = () => {
     const updatedNotes = [...(editTask.notes || []), note];
     const updatedTask  = { ...editTask, notes: updatedNotes };
     setEditTask(updatedTask);
-    // Notes lưu local (chưa có API riêng)
     dispatch(updateTaskNotes({ id: editTask.id, notes: updatedNotes }));
     setNewNote('');
   };
@@ -446,6 +498,11 @@ const Tasks = () => {
     } catch (err) { console.error('Delete file failed', err); }
   };
 
+  // subtasks của activeTask
+  const subTasks = activeTask
+    ? tasks.filter(t => t.parentId === activeTask.id)
+    : [];
+
   return (
     <div className="tasks-page">
 
@@ -457,16 +514,42 @@ const Tasks = () => {
         </div>
       </div>
 
+      {/* ── BULK ACTION BAR ── */}
+      {selectedTasks.length > 0 && (
+        <div className="bulk-action-bar">
+          <span className="bulk-count">
+            <CheckSquare size={16} color="#7c3aed" />
+            {selectedTasks.length} {t('tasksWord') || 'task'} {t('selected') || 'đã chọn'}
+          </span>
+          <div className="bulk-actions">
+            <button className="bulk-btn success" onClick={handleBulkComplete}>
+              <CheckCircle2 size={14} /> {t('statusCompleted') || 'Hoàn thành'}
+            </button>
+            <button className="bulk-btn info" onClick={handleBulkInProgress}>
+              <RefreshCw size={14} /> {t('statusInProgress') || 'In Progress'}
+            </button>
+            <button className="bulk-btn danger" onClick={handleBulkDelete}>
+              <Trash2 size={14} /> {t('deleteTaskBtn') || 'Xóa'}
+            </button>
+            <button className="bulk-btn neutral" onClick={() => setSelectedTasks([])}>
+              <X size={14} /> {t('cancel') || 'Bỏ chọn'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── SUMMARY CARDS ── */}
       <div className="summary-cards">
         {[
-          { label: t('totalTasks'),       value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed' },
-          { label: t('statusCompleted'),  value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a' },
-          { label: t('statusInProgress'), value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb' },
-          { label: t('statusPending'),    value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706' },
-          { label: t('overdue'),          value: summary.overdue,    Icon: AlertCircle,  bg: '#fee2e2', ic: '#dc2626' },
-        ].map(({ label, value, Icon, bg, ic }) => (
-          <div className="summary-card" key={label}>
+          { label: t('totalTasks'),       value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed', onClick: () => { setStatusFilter('All'); setCurrentPage(1); } },
+          { label: t('statusCompleted'),  value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a', onClick: () => { setStatusFilter('Completed'); setCurrentPage(1); } },
+          { label: t('statusInProgress'), value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb', onClick: () => { setStatusFilter('In Progress'); setCurrentPage(1); } },
+          { label: t('statusPending'),    value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706', onClick: () => { setStatusFilter('Pending'); setCurrentPage(1); } },
+        ].map(({ label, value, Icon, bg, ic, onClick }) => (
+          <div className="summary-card" key={label}
+            onClick={onClick ?? undefined}
+            style={{ cursor: onClick ? 'pointer' : 'default' }}
+          >
             <div className="card-icon-wrap" style={{ background: bg }}>
               <Icon size={22} color={ic} />
             </div>
@@ -541,8 +624,8 @@ const Tasks = () => {
         </div>
       </div>
 
-      {/* ── TASK TABLE ── */}
-      <div className="table-container">
+      {/* ── TASK TABLE (List View) ── */}
+      {viewMode === 'list' && <div className="table-container">
         <table className="flat-table">
           <thead>
             <tr>
@@ -587,6 +670,21 @@ const Tasks = () => {
                           <CatIcon size={17} color={cat.color} />
                         </span>
                         <span className="task-title">{task.title}</span>
+                        {/* Icon cảnh báo quá hạn từ lucide-react */}
+                        {overdue && (
+                          <span
+                            title={t('overdueStr') || 'Quá hạn'}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              marginLeft: '4px',
+                              flexShrink: 0,
+                              animation: 'overdue-pulse 1.4s ease-in-out infinite',
+                            }}
+                          >
+                            <AlertTriangle size={18} color="#ef4444" fill="#fee2e2" />
+                          </span>
+                        )}
                       </div>
                       <span className="task-desc">{task.description}</span>
                     </div>
@@ -661,8 +759,8 @@ const Tasks = () => {
         {/* Pagination */}
         <div className="pagination-bar">
           <span className="page-info">
-            {t('showing')} {filtered.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} {t('of')} {filtered.length} {t('tasksWord')}
+            {t('showing')} {sorted.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
+            {Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)} {t('of')} {sorted.length} {t('tasksWord')}
           </span>
           <div className="page-controls">
             <button className="btn-page" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}>
@@ -676,7 +774,78 @@ const Tasks = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div>}
+
+      {/* ── TASK GRID (Grid View) ── */}
+      {viewMode === 'grid' && (
+        <div>
+          {paginated.length > 0 ? (
+            <div className="task-grid-view">
+              {paginated.map(task => {
+                const cat = getCatMeta(task.categoryId);
+                const CatIcon = cat.Icon;
+                const overdue = isOverdue(task.deadline, task.status);
+                return (
+                  <div
+                    key={task.id}
+                    className={`task-grid-card ${overdue ? 'overdue-card' : ''}`}
+                    onClick={() => openDetail(task)}
+                  >
+                    <div className="tgc-header">
+                      <span className="tgc-cat-icon" style={{ background: cat.bg }}>
+                        <CatIcon size={15} color={cat.color} />
+                      </span>
+                      <span className="tgc-cat-name">{cat.name}</span>
+                      {overdue && (
+                        <span style={{ marginLeft: 'auto', animation: 'overdue-pulse 1.4s ease-in-out infinite', display: 'inline-flex' }}>
+                          <AlertTriangle size={15} color="#ef4444" fill="#fee2e2" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="tgc-title">{task.title}</div>
+                    {task.description && <div className="tgc-desc">{task.description}</div>}
+                    <div className="tgc-badges">
+                      <span className={`badge-status ${task.status.replace(/\s/g,'')}`} style={{ fontSize:'0.72rem', padding:'3px 9px' }}>
+                        {task.status === 'Completed' ? t('statusCompleted') : task.status === 'In Progress' ? t('statusInProgress') : t('statusTodo')}
+                      </span>
+                      <span className={`badge-priority ${task.priority}`} style={{ fontSize:'0.72rem', padding:'3px 9px' }}>
+                        {task.priority === 'High' ? t('priorityHigh') : task.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
+                      </span>
+                    </div>
+                    <div className="tgc-footer">
+                      <span className="tgc-deadline" style={{ color: overdue ? '#ef4444' : 'var(--text-light)' }}>
+                        <Calendar size={12} />
+                        {task.deadline ? new Date(task.deadline).toLocaleDateString(locale) : '—'}
+                      </span>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <div className="progress-bar-bg" style={{ width:'60px', height:'4px' }}>
+                          <div style={{ width:`${task.progress??0}%`, height:'100%', background:(task.progress??0)===100?'#16a34a':'#7c3aed', borderRadius:'99px' }} />
+                        </div>
+                        <span style={{ fontSize:'0.72rem', color:'var(--text-light)', fontWeight:600 }}>{task.progress??0}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state" style={{ padding:48, textAlign:'center', color:'var(--text-light)' }}>{t('noTasksFound')}</div>
+          )}
+          <div className="pagination-bar" style={{ marginTop:12, background:'var(--sidebar-bg)', border:'1px solid var(--border-color)', borderRadius:14 }}>
+            <span className="page-info">
+              {t('showing')} {sorted.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)} {t('of')} {sorted.length} {t('tasksWord')}
+            </span>
+            <div className="page-controls">
+              <button className="btn-page" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}><ChevronLeft size={15} /> {t('prevPage')}</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} className={`btn-page num ${currentPage === p ? 'active' : ''}`} onClick={() => changePage(p)}>{p}</button>
+              ))}
+              <button className="btn-page" onClick={() => changePage(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>{t('nextPage')} <ChevronRight size={15} /></button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── OVERLAY ── */}
       {activeTask && <div className="overlay" onClick={() => setActiveTask(null)} />}
@@ -742,6 +911,23 @@ const Tasks = () => {
                     style={{ width: `${editTask.progress ?? 0}%`, background: (editTask.progress ?? 0) === 100 ? '#16a34a' : '#7c3aed' }} />
                 </div>
               </div>
+
+              {/* ── Tags ── */}
+              <div className="detail-group" style={{ marginTop: '10px' }}>
+                <span className="meta-label"><Tag size={13} /> {t('tags') || 'Thẻ'}</span>
+                {editTask.tags && editTask.tags.length > 0 ? (
+                  <div className="tags-selected" style={{ marginTop: '6px' }}>
+                    {editTask.tags.map(tag => (
+                      <span key={tag} className="tag-chip">
+                        <Hash size={12} /> {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-notes" style={{ textAlign: 'left', padding: '4px 0' }}>{t('noTags') || 'Không có thẻ nào'}</div>
+                )}
+              </div>
+
               {/* ── Files / Attachments ── */}
               <div className="detail-group">
                 <div className="desc-header">
@@ -770,6 +956,43 @@ const Tasks = () => {
                   ))}
                 </div>
               </div>
+
+              {/* ── Subtasks ── */}
+              {subTasks.length > 0 && (
+                <div className="detail-group">
+                  <div className="desc-header">
+                    <Layers size={15} /><h3>{t('subtasks') || 'Subtasks'} ({subTasks.length})</h3>
+                  </div>
+                  <div className="subtask-list">
+                    {subTasks.map(sub => (
+                      <div key={sub.id} className="subtask-item" onClick={() => openDetail(sub)} style={{ cursor: 'pointer' }}>
+                        <span className={`subtask-check ${sub.status === 'Completed' ? 'done' : ''}`}>
+                          {sub.status === 'Completed'
+                            ? <CheckCircle2 size={14} color="#16a34a" />
+                            : <Square size={14} color="#94a3b8" />}
+                        </span>
+                        <span className={`subtask-title ${sub.status === 'Completed' ? 'line-through' : ''}`}>
+                          {sub.title}
+                        </span>
+                        <span className={`badge-priority ${sub.priority}`} style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                          <ArrowUp size={9} />
+                          {sub.priority === 'High' ? t('priorityHigh') : sub.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    className="btn-add-subtask"
+                    onClick={() => {
+                      setShowCreate(true);
+                      // Pre-fill parentId via initialData in modal by storing it
+                    }}
+                    style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px dashed #c4b5fd', borderRadius: 6, padding: '6px 12px', color: '#7c3aed', cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    <Plus size={13} /> {t('addSubtask') || 'Thêm subtask'}
+                  </button>
+                </div>
+              )}
 
               {/* ── Notes ── */}
               <div className="detail-group notes-group">
