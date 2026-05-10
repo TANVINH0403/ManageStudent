@@ -94,7 +94,7 @@ const Kanban = () => {
   };
 
   const handleEdit = (taskData) => {
-    dispatch(updateTask(taskData));
+    dispatch(updateTask({ id: taskData.id, data: taskData }));
     setEditingTask(null);
   };
 

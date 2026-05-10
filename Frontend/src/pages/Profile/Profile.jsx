@@ -7,6 +7,7 @@ import {
   Save, X, Plus, Trash2, User, AlertCircle, Loader, ShieldCheck, Send
 } from 'lucide-react';
 import { fetchProfile, updateProfile } from '../../redux/userSlice';
+import { fetchTasks } from '../../redux/taskSlice';
 import userApi from '../../api/userApi';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuth } from '../../context/AuthContext';
@@ -64,9 +65,10 @@ const Profile = () => {
   const userState  = useSelector(s => s.user);
   const profile    = userState.profile;
 
-  // Fetch profile on mount
+  // Fetch profile and tasks on mount
   useEffect(() => {
     dispatch(fetchProfile());
+    dispatch(fetchTasks());
   }, [dispatch]);
 
   /* Edit profile state */

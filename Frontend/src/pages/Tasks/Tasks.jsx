@@ -9,7 +9,7 @@ import {
   Search, Plus, MoreVertical, CheckSquare, Square,
   ChevronLeft, ChevronRight, X, Calendar, Flag, AlignLeft,
   Tag, RefreshCw, LayoutGrid, List, FolderOpen, ChevronDown,
-  ArrowUp, Clock, CheckCircle2, AlertCircle, Loader2, Edit2,
+  ArrowUp, Clock, CheckCircle2, AlertCircle, AlertTriangle, Loader2, Edit2,
   Database, BookOpen, Code2, Zap, Layers, MessageSquare, Send,
   Paperclip, Trash2, Upload, Users, Trophy, Folder, FileText, Palette,
   FlaskConical, Settings2, Star, Heart, Globe, Award, Briefcase, Target, Lightbulb, Rocket, Music, Camera, ShieldCheck
@@ -316,15 +316,30 @@ const Tasks = () => {
     if (categories.length === 0) dispatch(fetchCategories());
   }, [dispatch]);
 
-  // Open task details if navigated from Dashboard
+  // Áp dụng filter khi được navigate từ Dashboard
+  useEffect(() => {
+    const f = location.state?.filter;
+    if (f) {
+      if (f === 'All') {
+        setStatusFilter('All');
+      } else if (f === 'Overdue') {
+        // Dashboard card "Quá hạn" → không có filter riêng, chỉ hiển tất cả
+        setStatusFilter('All');
+      } else {
+        setStatusFilter(f);
+      }
+      setCurrentPage(1);
+      navigate(location.pathname, { replace: true, state: { ...location.state, filter: undefined } });
+    }
+  }, [location.state?.filter]);
+
+  // Mở task detail nếu navigate từ Dashboard
   useEffect(() => {
     if (location.state?.openTaskId && tasks.length > 0) {
       const taskToOpen = tasks.find(t => t.id === location.state.openTaskId);
       if (taskToOpen) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTask(taskToOpen);
         setEditTask({ ...taskToOpen });
-        // Optional: clear state so it doesn't reopen on refresh
         navigate(location.pathname, { replace: true, state: {} });
       }
     }
@@ -355,13 +370,26 @@ const Tasks = () => {
     const s = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
               t.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const c = categoryFilter === 'All' || t.categoryId === Number(categoryFilter);
-    const st = statusFilter   === 'All' || t.status    === statusFilter;
-    const p  = priorityFilter === 'All' || t.priority  === priorityFilter;
+    const st = statusFilter === 'All' || t.status === statusFilter;
+    const p  = priorityFilter === 'All' || t.priority === priorityFilter;
     return s && c && st && p;
   });
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated  = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  // Sắp xếp: task quá hạn lên trên đầu, tiếp theo là task gần deadline nhất,
+  // task không có deadline và task đã hoàn thành xuống cuối
+  const sorted = [...filtered].sort((a, b) => {
+    const aCompleted = a.status === 'Completed';
+    const bCompleted = b.status === 'Completed';
+    // Hoàn thành → xuống cuối
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+    // Cả hai hoặc không ai hoàn thành → so deadline
+    const aDate = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const bDate = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    return aDate - bDate; // deadline gần hơn lên trước
+  });
+
+  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE);
+  const paginated  = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Summary
   const summary = {
@@ -410,9 +438,13 @@ const Tasks = () => {
   const handleSaveDetail = async () => {
     if (!editTask) return;
     setSaving(true);
-    await dispatch(updateTask({ id: editTask.id, data: editTask }));
-    setActiveTask(editTask);
+    const result = await dispatch(updateTask({ id: editTask.id, data: editTask }));
     setSaving(false);
+    // Sync activeTask from Redux store (has fresh data from re-fetch)
+    if (result.payload && Array.isArray(result.payload)) {
+      const updated = result.payload.find(t => t.id === editTask.id);
+      if (updated) setActiveTask({ ...updated, notes: editTask.notes ?? [] });
+    }
   };
 
   const handleAddNote = () => {
@@ -509,13 +541,15 @@ const Tasks = () => {
       {/* ── SUMMARY CARDS ── */}
       <div className="summary-cards">
         {[
-          { label: t('totalTasks'),       value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed' },
-          { label: t('statusCompleted'),  value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a' },
-          { label: t('statusInProgress'), value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb' },
-          { label: t('statusPending'),    value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706' },
-          { label: t('overdue'),          value: summary.overdue,    Icon: AlertCircle,  bg: '#fee2e2', ic: '#dc2626' },
-        ].map(({ label, value, Icon, bg, ic }) => (
-          <div className="summary-card" key={label}>
+          { label: t('totalTasks'),       value: summary.total,      Icon: List,         bg: '#ede9fe', ic: '#7c3aed', onClick: () => { setStatusFilter('All'); setCurrentPage(1); } },
+          { label: t('statusCompleted'),  value: summary.completed,  Icon: CheckCircle2, bg: '#dcfce7', ic: '#16a34a', onClick: () => { setStatusFilter('Completed'); setCurrentPage(1); } },
+          { label: t('statusInProgress'), value: summary.inProgress, Icon: RefreshCw,    bg: '#dbeafe', ic: '#2563eb', onClick: () => { setStatusFilter('In Progress'); setCurrentPage(1); } },
+          { label: t('statusPending'),    value: summary.pending,    Icon: Clock,        bg: '#fef3c7', ic: '#d97706', onClick: () => { setStatusFilter('Pending'); setCurrentPage(1); } },
+        ].map(({ label, value, Icon, bg, ic, onClick }) => (
+          <div className="summary-card" key={label}
+            onClick={onClick ?? undefined}
+            style={{ cursor: onClick ? 'pointer' : 'default' }}
+          >
             <div className="card-icon-wrap" style={{ background: bg }}>
               <Icon size={22} color={ic} />
             </div>
@@ -590,8 +624,8 @@ const Tasks = () => {
         </div>
       </div>
 
-      {/* ── TASK TABLE ── */}
-      <div className="table-container">
+      {/* ── TASK TABLE (List View) ── */}
+      {viewMode === 'list' && <div className="table-container">
         <table className="flat-table">
           <thead>
             <tr>
@@ -636,6 +670,21 @@ const Tasks = () => {
                           <CatIcon size={17} color={cat.color} />
                         </span>
                         <span className="task-title">{task.title}</span>
+                        {/* Icon cảnh báo quá hạn từ lucide-react */}
+                        {overdue && (
+                          <span
+                            title={t('overdueStr') || 'Quá hạn'}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              marginLeft: '4px',
+                              flexShrink: 0,
+                              animation: 'overdue-pulse 1.4s ease-in-out infinite',
+                            }}
+                          >
+                            <AlertTriangle size={18} color="#ef4444" fill="#fee2e2" />
+                          </span>
+                        )}
                       </div>
                       <span className="task-desc">{task.description}</span>
                     </div>
@@ -710,8 +759,8 @@ const Tasks = () => {
         {/* Pagination */}
         <div className="pagination-bar">
           <span className="page-info">
-            {t('showing')} {filtered.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
-            {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} {t('of')} {filtered.length} {t('tasksWord')}
+            {t('showing')} {sorted.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
+            {Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)} {t('of')} {sorted.length} {t('tasksWord')}
           </span>
           <div className="page-controls">
             <button className="btn-page" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}>
@@ -725,7 +774,78 @@ const Tasks = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div>}
+
+      {/* ── TASK GRID (Grid View) ── */}
+      {viewMode === 'grid' && (
+        <div>
+          {paginated.length > 0 ? (
+            <div className="task-grid-view">
+              {paginated.map(task => {
+                const cat = getCatMeta(task.categoryId);
+                const CatIcon = cat.Icon;
+                const overdue = isOverdue(task.deadline, task.status);
+                return (
+                  <div
+                    key={task.id}
+                    className={`task-grid-card ${overdue ? 'overdue-card' : ''}`}
+                    onClick={() => openDetail(task)}
+                  >
+                    <div className="tgc-header">
+                      <span className="tgc-cat-icon" style={{ background: cat.bg }}>
+                        <CatIcon size={15} color={cat.color} />
+                      </span>
+                      <span className="tgc-cat-name">{cat.name}</span>
+                      {overdue && (
+                        <span style={{ marginLeft: 'auto', animation: 'overdue-pulse 1.4s ease-in-out infinite', display: 'inline-flex' }}>
+                          <AlertTriangle size={15} color="#ef4444" fill="#fee2e2" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="tgc-title">{task.title}</div>
+                    {task.description && <div className="tgc-desc">{task.description}</div>}
+                    <div className="tgc-badges">
+                      <span className={`badge-status ${task.status.replace(/\s/g,'')}`} style={{ fontSize:'0.72rem', padding:'3px 9px' }}>
+                        {task.status === 'Completed' ? t('statusCompleted') : task.status === 'In Progress' ? t('statusInProgress') : t('statusTodo')}
+                      </span>
+                      <span className={`badge-priority ${task.priority}`} style={{ fontSize:'0.72rem', padding:'3px 9px' }}>
+                        {task.priority === 'High' ? t('priorityHigh') : task.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
+                      </span>
+                    </div>
+                    <div className="tgc-footer">
+                      <span className="tgc-deadline" style={{ color: overdue ? '#ef4444' : 'var(--text-light)' }}>
+                        <Calendar size={12} />
+                        {task.deadline ? new Date(task.deadline).toLocaleDateString(locale) : '—'}
+                      </span>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <div className="progress-bar-bg" style={{ width:'60px', height:'4px' }}>
+                          <div style={{ width:`${task.progress??0}%`, height:'100%', background:(task.progress??0)===100?'#16a34a':'#7c3aed', borderRadius:'99px' }} />
+                        </div>
+                        <span style={{ fontSize:'0.72rem', color:'var(--text-light)', fontWeight:600 }}>{task.progress??0}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state" style={{ padding:48, textAlign:'center', color:'var(--text-light)' }}>{t('noTasksFound')}</div>
+          )}
+          <div className="pagination-bar" style={{ marginTop:12, background:'var(--sidebar-bg)', border:'1px solid var(--border-color)', borderRadius:14 }}>
+            <span className="page-info">
+              {t('showing')} {sorted.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} {t('to')}{' '}
+              {Math.min(currentPage * ITEMS_PER_PAGE, sorted.length)} {t('of')} {sorted.length} {t('tasksWord')}
+            </span>
+            <div className="page-controls">
+              <button className="btn-page" onClick={() => changePage(currentPage - 1)} disabled={currentPage === 1}><ChevronLeft size={15} /> {t('prevPage')}</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button key={p} className={`btn-page num ${currentPage === p ? 'active' : ''}`} onClick={() => changePage(p)}>{p}</button>
+              ))}
+              <button className="btn-page" onClick={() => changePage(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>{t('nextPage')} <ChevronRight size={15} /></button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── OVERLAY ── */}
       {activeTask && <div className="overlay" onClick={() => setActiveTask(null)} />}
