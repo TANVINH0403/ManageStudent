@@ -8,6 +8,7 @@ namespace API.Entities
         public string UserName { get; set; }
         public string PasswordHash { get; set; }
         public string Email { get; set; }
+        public string? AvatarUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }

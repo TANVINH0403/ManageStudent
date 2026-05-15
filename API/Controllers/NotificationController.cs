@@ -69,6 +69,14 @@ namespace API.Controllers
             return Ok(new { message = "All notifications marked as read" });
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
+        {
+            var userId = GetUserId();
+            var success = await _handle.DeleteNotification(id, userId, CancellationToken.None);
+            if (!success) return NotFound();
+            return NoContent();
+        }
 
     }
 }

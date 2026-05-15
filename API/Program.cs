@@ -1,6 +1,7 @@
 using API.Data;
 using API.Dependency;
 using API.Validator;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
 namespace API
@@ -92,6 +93,15 @@ namespace API
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("AllowFrontend");
+            // Phục vụ wwwroot/avatars/ với CORS header
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+                    ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=3600");
+                }
+            });
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapHub<NotificationHub>("/hubs/notifications");

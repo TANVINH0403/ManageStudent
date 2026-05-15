@@ -43,12 +43,20 @@ namespace API.Service.NotificationService
                     {
                         if (!task.IsDueSoonNotified)
                         {
+                            // Tính số ngày còn lại chính xác
+                            var daysLeft = (task.DueDate!.Value.Date - DateTime.UtcNow.Date).Days;
+                            var deadlineMsg = daysLeft <= 0
+                                ? $"Task '{task.TaskName}' đến hạn hôm nay!"
+                                : daysLeft == 1
+                                    ? $"Task '{task.TaskName}' đến hạn ngày mai!"
+                                    : $"Task '{task.TaskName}' sẽ đến hạn trong {daysLeft} ngày!";
+
                             var notification = new Notification
                             {
                                 UserId = task.UserId,
                                 TaskId = task.TaskId,
                                 Type = NotificationType.DueSoon,
-                                Message = $"⏰ Task '{task.TaskName}' sẽ đến hạn trong vòng 2 ngày!",
+                                Message = deadlineMsg,
                                 CreatedAt = DateTime.UtcNow
                             };
 

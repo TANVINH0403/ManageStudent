@@ -77,6 +77,44 @@ const Profile = () => {
   const [saveMsg, setSaveMsg]     = useState(null);
   const [saving, setSaving]       = useState(false);
   const [dialog, setDialog]       = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  // URL hiển thị ngay lập tức sau khi upload (trước khi refetch profile)
+  const [localAvatar, setLocalAvatar] = useState(null);
+  const [imgError, setImgError] = useState(false);
+
+  // Avatar hiển thị: ưu tiên localAvatar, rồi profile từ API
+  const displayAvatar = !imgError && (
+    localAvatar
+    || (profile?.avatarUrl ? `http://localhost:5050${profile.avatarUrl}` : null)
+    || user?.avatar
+    || null
+  );
+
+  /* Avatar upload handler */
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset imgError before new upload
+    setImgError(false);
+    // Hiển thị preview ngay lập tức
+    const objectUrl = URL.createObjectURL(file);
+    setLocalAvatar(objectUrl);
+    setAvatarUploading(true);
+    try {
+      const res = await userApi.uploadAvatar(file);
+      const avatarUrl = res.data?.avatarUrl ?? res.avatarUrl;
+      const fullUrl = `http://localhost:5050${avatarUrl}`;
+      // Cập nhật AuthContext → Header cũng đổi
+      updateUserSession({ avatar: fullUrl });
+      setLocalAvatar(fullUrl);
+      dispatch(fetchProfile());
+    } catch (err) {
+      setLocalAvatar(null); // rollback preview
+      alert(err?.response?.data?.message || 'Upload thất bại. API có thể chưa khởi động.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   /* Email OTP state */
   const [otpStep, setOtpStep]     = useState('idle');  // 'idle' | 'newEmail' | 'verifyOtp'
@@ -348,16 +386,40 @@ const Profile = () => {
 
           {/* Avatar */}
           <div className="profile-avatar-wrap" style={{ position: 'relative' }}>
-            <AvatarPlaceholder name={displayName} size={90} />
-            {isEditingProfile && (
-              <label style={{
-                position: 'absolute', bottom: 0, right: 0, background: '#7c3aed', color: 'white',
-                borderRadius: '50%', padding: 6, cursor: 'pointer', display: 'flex'
-              }} title={t('avatarNotSupportedTitle')}>
-                <Edit2 size={12} />
-                <input type="file" style={{ display: 'none' }} accept="image/*" onChange={() => setDialog({ isOpen: true, type: 'alert', title: t('avatarNotSupportedTitle'), message: t('avatarNotSupportedMsg') })} />
-              </label>
-            )}
+            {/* Hiển thị avatar thực hoặc placeholder */}
+            {displayAvatar
+              ? (
+                <img
+                  src={displayAvatar}
+                  alt="Avatar"
+                  style={{
+                    width: 90, height: 90, borderRadius: '50%',
+                    objectFit: 'cover', border: '3px solid #7c3aed',
+                    flexShrink: 0,
+                  }}
+                  onError={() => setImgError(true)}
+                />
+              )
+              : <AvatarPlaceholder name={displayName} size={90} />
+            }
+            {/* Nút upload avatar — luôn hiển */}
+            <label style={{
+              position: 'absolute', bottom: 0, right: 0, background: '#7c3aed', color: 'white',
+              borderRadius: '50%', padding: 6, cursor: avatarUploading ? 'wait' : 'pointer',
+              display: 'flex', boxShadow: '0 2px 8px rgba(124,58,237,0.4)',
+              opacity: avatarUploading ? 0.7 : 1,
+            }} title="Cập nhật ảnh đại diện">
+              {avatarUploading
+                ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                : <Edit2 size={12} />}
+              <input
+                type="file"
+                style={{ display: 'none' }}
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={avatarUploading}
+                onChange={handleAvatarChange}
+              />
+            </label>
           </div>
 
           {/* Name & Title */}

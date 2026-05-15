@@ -23,6 +23,15 @@ const userApi = {
 
   // POST /api/user/confirm-email-change — verify OTP and apply new email
   confirmEmailChange: (otp) => axiosClient.post('/user/confirm-email-change', { otp }),
+
+  // POST /api/user/avatar — upload avatar image
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axiosClient.post('/user/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default userApi;

@@ -125,7 +125,8 @@ namespace API.Service.AuthService
             return new UserDto
             {
                 Username = user.UserName,
-                Email = user.Email
+                Email = user.Email,
+                AvatarUrl = user.AvatarUrl != null ? $"http://localhost:5050{user.AvatarUrl}" : null
             };
         }
 
@@ -142,7 +143,8 @@ namespace API.Service.AuthService
                 Username = user.UserName,
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                AccessTokenExpiry = expires
+                AccessTokenExpiry = expires,
+                Avatar = user.AvatarUrl != null ? $"http://localhost:5050{user.AvatarUrl}" : null
             };
         }
     }

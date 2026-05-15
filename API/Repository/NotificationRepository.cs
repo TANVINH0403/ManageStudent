@@ -60,5 +60,16 @@ namespace API.Repository
 
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<bool> DeleteAsync(int id, int userId, CancellationToken ct)
+        {
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId, ct);
+            if (notification == null)
+                return false;
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync(ct);
+            return true;
+        }
     }
 }
