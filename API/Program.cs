@@ -107,8 +107,7 @@ namespace API
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapControllers();
 
-            // PostgreSQL local: tạo schema từ model, bỏ qua migrations SQL Server
-            // PHẢI đặt TRƯỚC app.Run() để BackgroundService không query bảng chưa tạo
+
 
             using var scope = app.Services.CreateScope();
             {
@@ -124,20 +123,20 @@ namespace API
                 }
                 else
                 {
-                    try { 
+                    try {
                         db.Database.ExecuteSqlRaw(@"
                             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Tasks' AND COLUMN_NAME = 'Progress')
                             BEGIN ALTER TABLE [Tasks] ADD [Progress] INT NOT NULL DEFAULT 0; END
-                        "); 
+                        ");
                     } catch { }
 
                     try { db.Database.ExecuteSqlRaw(@"ALTER TABLE [Notifications] ALTER COLUMN [TaskId] INT NULL;"); } catch { }
 
-                    try { 
+                    try {
                         db.Database.ExecuteSqlRaw(@"
                             IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'AvatarUrl')
                             BEGIN ALTER TABLE [Users] ADD [AvatarUrl] NVARCHAR(MAX) NULL; END
-                        "); 
+                        ");
                     } catch { }
                 }
             }
