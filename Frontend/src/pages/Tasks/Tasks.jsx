@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes, updateTaskStatus } from '../../redux/taskSlice';
+import { fetchTasks, createTask, updateTask, deleteTask, updateTaskNotes, updateTaskStatus, fetchSubTasks } from '../../redux/taskSlice';
 import { fetchCategories, createCategory } from '../../redux/categorySlice';
 import { fetchTags } from '../../redux/tagSlice';
 import taskFileApi from '../../api/taskFileApi';
@@ -12,7 +12,7 @@ import {
   ArrowUp, Clock, CheckCircle2, AlertCircle, AlertTriangle, Loader2, Edit2,
   Database, BookOpen, Code2, Zap, Layers, MessageSquare, Send,
   Paperclip, Trash2, Upload, Users, Trophy, Folder, FileText, Palette,
-  FlaskConical, Settings2, Star, Heart, Globe, Award, Briefcase, Target, Lightbulb, Rocket, Music, Camera, ShieldCheck
+  FlaskConical, Settings2, Star, Heart, Globe, Award, Briefcase, Target, Lightbulb, Rocket, Music, Camera, ShieldCheck, CircleDashed
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuth } from '../../context/AuthContext';
@@ -144,7 +144,12 @@ export const CreateTaskModal = ({ categories, tags, dispatch, onClose, onSave, i
       setDialog({ isOpen: true, title: t('alertTitle') || 'Thông báo', message: t('noCategoryAlert') });
       return;
     }
-    onSave(initialData ? { ...initialData, ...form, categoryId: Number(form.categoryId), tagNames: selectedTags } : { ...form, categoryId: Number(form.categoryId), tagNames: selectedTags });
+    const payload = initialData
+      ? { ...initialData, ...form, categoryId: Number(form.categoryId), tagNames: selectedTags }
+      : { ...form, categoryId: Number(form.categoryId), tagNames: selectedTags };
+      
+    if (form.parentId) payload.parentId = form.parentId;
+    onSave(payload);
     onClose();
   };
 
@@ -285,16 +290,19 @@ const Tasks = () => {
   const navigate = useNavigate();
   const { t, locale } = useTranslation();
   const { isAuthenticated, showAuthModal } = useAuth();
-  const tasks      = useSelector(s => s.tasks.items);
-  const taskStatus = useSelector(s => s.tasks.status);
-  const categories = useSelector(s => s.categories.items);
-  const tags       = useSelector(s => s.tags.items);
+  const tasks            = useSelector(s => s.tasks.items);
+  const subTasksByParent = useSelector(s => s.tasks.subTasksByParent);
+  const taskStatus       = useSelector(s => s.tasks.status);
+  const categories       = useSelector(s => s.categories.items);
+  const tags             = useSelector(s => s.tags.items);
 
-  const [searchTerm, setSearchTerm]         = useState('');
+  const [searchTerm, setSearchTerm]          = useState('');
   const [categoryFilter, setCategoryFilter]  = useState('All');
   const [statusFilter, setStatusFilter]      = useState('All');
   const [priorityFilter, setPriorityFilter]  = useState('All');
   const [selectedTasks, setSelectedTasks]    = useState([]);
+  const [expandedTasks, setExpandedTasks]    = useState(new Set());
+  const [inlineCreateParentId, setInlineCreateParentId] = useState(null);
   const [activeTask, setActiveTask]          = useState(null);
   const [editTask, setEditTask]              = useState(null);
   const [currentPage, setCurrentPage]        = useState(1);
@@ -417,6 +425,35 @@ const Tasks = () => {
     }
   };
 
+  const toggleExpand = (e, taskId) => {
+    e.stopPropagation();
+    setExpandedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+        if (!subTasksByParent[taskId]) {
+          dispatch(fetchSubTasks(taskId));
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleAddSubtaskClick = (e, taskId) => {
+    e.stopPropagation();
+    setInlineCreateParentId(taskId);
+    setExpandedTasks(prev => {
+      const next = new Set(prev);
+      next.add(taskId);
+      if (!subTasksByParent[taskId]) {
+        dispatch(fetchSubTasks(taskId));
+      }
+      return next;
+    });
+  };
+
   // ── Bulk Actions ──────────────────────────────────────────────────────────
   const handleBulkDelete = async () => {
     if (!window.confirm(`Xóa ${selectedTasks.length} task đã chọn?`)) return;
@@ -460,7 +497,29 @@ const Tasks = () => {
     setNewNote('');
   };
 
-  const handleCreateTask = (newTask) => { dispatch(createTask(newTask)); };
+  const handleCreateTask = async (newTask) => { 
+    const res = await dispatch(createTask(newTask));
+    if (!res.error && newTask.parentId) {
+      dispatch(fetchSubTasks(newTask.parentId));
+    }
+  };
+
+  const handleInlineCreate = async (parentId, title, categoryId) => {
+    const payload = {
+      title,
+      description: '',
+      categoryId: categoryId || categories[0]?.id,
+      parentId,
+      deadline: new Date().toISOString().split('T')[0],
+      priority: 'Medium',
+      status: 'Pending',
+      tags: []
+    };
+    const res = await dispatch(createTask(payload));
+    if (!res.error) {
+      dispatch(fetchSubTasks(parentId));
+    }
+  };
 
   const clearFilters = () => {
     setSearchTerm(''); setCategoryFilter('All');
@@ -502,6 +561,161 @@ const Tasks = () => {
   const subTasks = activeTask
     ? tasks.filter(t => t.parentId === activeTask.id)
     : [];
+
+  const renderTaskRow = (task, level = 0) => {
+    const cat = getCatMeta(task.categoryId);
+    const CatIcon = cat.Icon;
+    const overdue = isOverdue(task.deadline, task.status);
+    const isExpanded = expandedTasks.has(task.id);
+    const children = subTasksByParent[task.id] || [];
+
+    return (
+      <React.Fragment key={task.id}>
+        <tr
+          className={`task-row ${selectedTasks.includes(task.id) ? 'selected-row' : ''}`}
+          onClick={() => openDetail(task)}
+        >
+          <td>
+            <div className="checkbox-wrapper" onClick={e => toggleSelect(e, task.id)} style={{ marginLeft: level * 24 }}>
+              {selectedTasks.includes(task.id)
+                ? <CheckSquare size={17} color="#7c3aed" />
+                : <Square size={17} color="#cbd5e1" />}
+            </div>
+          </td>
+          <td>
+            <div className="task-name-cell" style={{ paddingLeft: level > 0 ? 8 : 0 }}>
+              <div className="task-icon-title" style={{ gap: '6px' }}>
+                {task.hasSubtasks ? (
+                  <button className="btn-expand" onClick={(e) => toggleExpand(e, task.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-light)', flexShrink: 0 }}>
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  </button>
+                ) : (
+                  <div style={{ width: 16, flexShrink: 0 }} />
+                )}
+                <span className="task-cat-icon" style={{ background: cat.bg, flexShrink: 0 }}>
+                  <CatIcon size={17} color={cat.color} />
+                </span>
+                <span className="task-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>{task.title}</span>
+                {overdue && (
+                  <span title={t('overdueStr') || 'Quá hạn'} style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '4px', animation: 'overdue-pulse 1.4s ease-in-out infinite', flexShrink: 0 }}>
+                    <AlertTriangle size={18} color="#ef4444" fill="#fee2e2" />
+                  </span>
+                )}
+                <button
+                  className="btn-add-subtask"
+                  title="Thêm Task con"
+                  onClick={(e) => handleAddSubtaskClick(e, task.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, display: 'flex', padding: 2, marginLeft: 'auto', flexShrink: 0 }}
+                >
+                  <Plus size={14} color="#7c3aed" />
+                </button>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span className="cell-category">
+              <FolderOpen size={13} color="#94a3b8" />
+              {cat.name}
+            </span>
+          </td>
+          <td>
+            <div className="deadline-cell">
+              <div className="deadline-date">
+                <Calendar size={13} color={overdue ? '#ef4444' : '#94a3b8'} />
+                <span style={{ color: overdue ? '#ef4444' : 'var(--text-main)' }}>
+                  {task.deadline ? new Date(task.deadline).toLocaleDateString(locale) : '—'}
+                </span>
+              </div>
+              <span className={`days-badge ${overdue ? 'overdue' : task.status === 'Completed' ? 'done' : 'normal'}`}>
+                {getDaysText(task.deadline, task.status, t)}
+              </span>
+            </div>
+          </td>
+          <td>
+            <span className={`badge-priority ${task.priority}`}>
+              <ArrowUp size={11} />
+              {task.priority === 'High' ? t('priorityHigh') : task.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
+            </span>
+          </td>
+          <td>
+            <span className={`badge-status ${task.status.replace(/\s/g, '')}`}>
+              {task.status === 'Completed'   && <CheckCircle2 size={12} />}
+              {task.status === 'In Progress' && <RefreshCw size={12} />}
+              {task.status === 'Pending'     && <Clock size={12} />}
+              {task.status === 'Completed'   ? t('statusCompleted')   :
+               task.status === 'In Progress' ? t('statusInProgress') : t('statusTodo')}
+            </span>
+          </td>
+          <td>
+            <div className="progress-cell">
+              <span className="progress-pct">{task.progress ?? 0}%</span>
+              <div className="progress-bar-bg">
+                <div className="progress-bar-fill" style={{ width: `${task.progress ?? 0}%`, background: (task.progress ?? 0) === 100 ? '#16a34a' : '#7c3aed' }} />
+              </div>
+            </div>
+          </td>
+          <td>
+            <div className="more-menu-wrap" ref={openMenuId === task.id ? menuRef : null}>
+              <button className="btn-more" onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === task.id ? null : task.id); }}>
+                <MoreVertical size={17} />
+              </button>
+              {openMenuId === task.id && (
+                <div className="context-menu">
+                  <button onClick={e => { e.stopPropagation(); openDetail(task); setOpenMenuId(null); }}><Edit2 size={14} style={{ marginRight: 6 }} /> {t('editTaskBtn')}</button>
+                  <button className="danger" onClick={e => { e.stopPropagation(); handleDeleteTask(task.id); }}><Trash2 size={14} style={{ marginRight: 6 }} /> {t('deleteTaskBtn')}</button>
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+        {isExpanded && children.map(sub => renderTaskRow(sub, level + 1))}
+        {inlineCreateParentId === task.id && isExpanded && (
+          <tr className="inline-create-row" key={`${task.id}-inline-create`}>
+            <td></td>
+            <td colSpan="7">
+              <div style={{ 
+                marginLeft: (level > 0 ? 8 : 0) + 24, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 10, 
+                padding: '8px 12px', 
+                opacity: 0.8, 
+                background: 'rgba(241, 245, 249, 0.5)', 
+                borderRadius: '6px', 
+                border: '1px dashed #cbd5e1', 
+                width: 'fit-content', 
+                minWidth: '350px',
+                marginTop: '4px',
+                marginBottom: '4px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.background = '#f8fafc'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = 'rgba(241, 245, 249, 0.5)'; }}
+              >
+                 <CircleDashed size={15} color="#94a3b8" />
+                 <input 
+                   autoFocus
+                   onBlur={() => setInlineCreateParentId(null)}
+                   type="text" 
+                   placeholder="Thêm công việc con (Nhấn Enter để lưu)..."
+                   style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.85rem', color: 'var(--text-main)' }}
+                   onKeyDown={(e) => {
+                      if (e.key === 'Escape') setInlineCreateParentId(null);
+                      if (e.key === 'Enter' && e.target.value.trim()) {
+                         const title = e.target.value.trim();
+                         e.target.value = '';
+                         handleInlineCreate(task.id, title, task.categoryId);
+                         setInlineCreateParentId(null);
+                      }
+                   }}
+                 />
+              </div>
+            </td>
+          </tr>
+        )}
+      </React.Fragment>
+    );
+  };
 
   return (
     <div className="tasks-page">
@@ -646,110 +860,7 @@ const Tasks = () => {
             </tr>
           </thead>
           <tbody>
-            {paginated.length > 0 ? paginated.map(task => {
-              const cat = getCatMeta(task.categoryId);
-              const CatIcon = cat.Icon;
-              const overdue = isOverdue(task.deadline, task.status);
-
-              return (
-                <tr key={task.id}
-                  className={`task-row ${selectedTasks.includes(task.id) ? 'selected-row' : ''}`}
-                  onClick={() => openDetail(task)}
-                >
-                  <td>
-                    <div className="checkbox-wrapper" onClick={e => toggleSelect(e, task.id)}>
-                      {selectedTasks.includes(task.id)
-                        ? <CheckSquare size={17} color="#7c3aed" />
-                        : <Square size={17} color="#cbd5e1" />}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="task-name-cell">
-                      <div className="task-icon-title">
-                        <span className="task-cat-icon" style={{ background: cat.bg }}>
-                          <CatIcon size={17} color={cat.color} />
-                        </span>
-                        <span className="task-title">{task.title}</span>
-                        {/* Icon cảnh báo quá hạn từ lucide-react */}
-                        {overdue && (
-                          <span
-                            title={t('overdueStr') || 'Quá hạn'}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              marginLeft: '4px',
-                              flexShrink: 0,
-                              animation: 'overdue-pulse 1.4s ease-in-out infinite',
-                            }}
-                          >
-                            <AlertTriangle size={18} color="#ef4444" fill="#fee2e2" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="cell-category">
-                      <FolderOpen size={13} color="#94a3b8" />
-                      {cat.name}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="deadline-cell">
-                      <div className="deadline-date">
-                        <Calendar size={13} color={overdue ? '#ef4444' : '#94a3b8'} />
-                        <span style={{ color: overdue ? '#ef4444' : 'var(--text-main)' }}>
-                          {new Date(task.deadline).toLocaleDateString(locale)}
-                        </span>
-                      </div>
-                      <span className={`days-badge ${overdue ? 'overdue' : task.status === 'Completed' ? 'done' : 'normal'}`}>
-                        {getDaysText(task.deadline, task.status, t)}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge-priority ${task.priority}`}>
-                      <ArrowUp size={11} />
-                      {task.priority === 'High' ? t('priorityHigh') : task.priority === 'Low' ? t('priorityLow') : t('priorityMedium')}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge-status ${task.status.replace(/\s/g, '')}`}>
-                      {task.status === 'Completed'   && <CheckCircle2 size={12} />}
-                      {task.status === 'In Progress' && <RefreshCw size={12} />}
-                      {task.status === 'Pending'     && <Clock size={12} />}
-                      {task.status === 'Completed'   ? t('statusCompleted')   :
-                       task.status === 'In Progress' ? t('statusInProgress') : t('statusTodo')}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="progress-cell">
-                      <span className="progress-pct">{task.progress ?? 0}%</span>
-                      <div className="progress-bar-bg">
-                        <div className="progress-bar-fill" style={{
-                          width: `${task.progress ?? 0}%`,
-                          background: (task.progress ?? 0) === 100 ? '#16a34a' : '#7c3aed',
-                        }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="more-menu-wrap" ref={openMenuId === task.id ? menuRef : null}>
-                      <button className="btn-more"
-                        onClick={e => { e.stopPropagation(); setOpenMenuId(openMenuId === task.id ? null : task.id); }}>
-                        <MoreVertical size={17} />
-                      </button>
-                      {openMenuId === task.id && (
-                        <div className="context-menu">
-                          <button onClick={e => { e.stopPropagation(); openDetail(task); setOpenMenuId(null); }}><Edit2 size={14} style={{ marginRight: 6 }} /> {t('editTaskBtn')}</button>
-                          <button className="danger" onClick={e => { e.stopPropagation(); handleDeleteTask(task.id); }}><Trash2 size={14} style={{ marginRight: 6 }} /> {t('deleteTaskBtn')}</button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            }) : (
+            {paginated.length > 0 ? paginated.map(task => renderTaskRow(task)) : (
               <tr><td colSpan="8" className="empty-state">{t('noTasksFound')}</td></tr>
             )}
           </tbody>

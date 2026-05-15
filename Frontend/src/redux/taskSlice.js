@@ -125,11 +125,25 @@ export const deleteTask = createAsyncThunk(
   }
 );
 
+export const fetchSubTasks = createAsyncThunk(
+  'tasks/fetchSubTasks',
+  async (parentId, { rejectWithValue }) => {
+    try {
+      const res = await taskApi.getSubTasks(parentId);
+      const items = Array.isArray(res) ? res : (res.data ?? res.items ?? []);
+      return { parentId, subTasks: items.map(normalize) };
+    } catch (err) {
+      return rejectWithValue(err?.response?.data?.message ?? 'Lỗi tải task con');
+    }
+  }
+);
+
 // ── Slice ──────────────────────────────────────────────────────────────────────
 const taskSlice = createSlice({
   name: 'tasks',
   initialState: {
     items:  [],
+    subTasksByParent: {}, // { [parentId]: [subTask1, subTask2, ...] }
     status: 'idle',   // 'idle' | 'loading' | 'succeeded' | 'failed'
     error:  null,
   },
@@ -188,6 +202,17 @@ const taskSlice = createSlice({
     builder
       .addCase(deleteTask.fulfilled, (state, { payload }) => {
         state.items = state.items.filter(t => t.id !== payload);
+        // Remove from subtasks if it's a subtask
+        Object.keys(state.subTasksByParent).forEach(parentId => {
+           state.subTasksByParent[parentId] = state.subTasksByParent[parentId].filter(t => t.id !== payload);
+        });
+      });
+
+    // fetchSubTasks
+    builder
+      .addCase(fetchSubTasks.fulfilled, (state, { payload }) => {
+        const { parentId, subTasks } = payload;
+        state.subTasksByParent[parentId] = subTasks;
       });
   },
 });

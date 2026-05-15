@@ -24,6 +24,8 @@ const taskApi = {
   delete: (taskId) => axiosClient.delete(`/task/${taskId}`),
 
   getByCategory: (categoryId) => axiosClient.get(`/task/${categoryId}/tasks`),
+
+  getSubTasks: (parentId) => axiosClient.get(`/task/${parentId}/subtasks`),
 };
 
 export default taskApi;
