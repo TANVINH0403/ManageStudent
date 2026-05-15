@@ -53,5 +53,10 @@ namespace API.Service.NotificationService
         {
             await _notifyRepo.MarkAllAsReadAsync(userId, ct);
         }
+
+        public async Task<bool> DeleteNotification(int id, int userId, CancellationToken ct)
+        {
+            return await _notifyRepo.DeleteAsync(id, userId, ct);
+        }
     }
 }

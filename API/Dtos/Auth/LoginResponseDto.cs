@@ -1,4 +1,4 @@
-﻿namespace API.Dtos.Auth
+namespace API.Dtos.Auth
 {
     public class LoginResponseDto
     {
@@ -6,6 +6,7 @@
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime AccessTokenExpiry { get; set; }
+        public string? Avatar { get; set; }
 
     }
 }

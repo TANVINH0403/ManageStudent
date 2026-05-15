@@ -8,7 +8,7 @@ export const fetchProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await userApi.getProfile();
-      return res;
+      return res.data ?? res;
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi tải profile');
     }
@@ -22,7 +22,7 @@ export const updateProfile = createAsyncThunk(
       await userApi.updateProfile(data);
       // Fetch fresh profile after update
       const res = await userApi.getProfile();
-      return res;
+      return res.data ?? res;
     } catch (err) {
       return rejectWithValue(err?.response?.data?.message ?? 'Lỗi cập nhật profile');
     }

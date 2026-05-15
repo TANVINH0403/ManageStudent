@@ -225,9 +225,8 @@ const Kanban = () => {
                       </div>
                     </div>
 
-                    {/* Title & desc */}
+                    {/* Title */}
                     <h4 className="kb-card-title">{task.title}</h4>
-                    {task.description && <p className="kb-card-desc">{task.description}</p>}
 
                     {/* Progress bar – only for In Progress */}
                     {task.status === 'In Progress' && task.progress != null && task.progress > 0 && (

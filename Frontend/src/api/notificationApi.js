@@ -15,6 +15,10 @@ const notificationApi = {
 
   markAllAsRead: () => {
     return axiosClient.patch('/Notification/mark-all-read');
+  },
+
+  deleteById: (id) => {
+    return axiosClient.delete(`/Notification/${id}`);
   }
 };
 

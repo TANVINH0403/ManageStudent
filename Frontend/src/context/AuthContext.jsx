@@ -20,8 +20,11 @@ export const AuthProvider = ({ children }) => {
     authApi.getMe()
       .then((res) => {
         // BE trả về { success, data: { username, ... }, message }
-        const user = res.data ?? res;
-        setUser(user);
+        const data = res.data ?? res;
+        setUser({
+          ...data,
+          avatar: data.avatarUrl || data.avatar
+        });
       })
       .catch(() => {
         // token expired / invalid → clear storage
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('access_token', data.accessToken);
     localStorage.setItem('refresh_token', data.refreshToken);
     setToken(data.accessToken);
-    setUser({ username: data.username });
+    setUser({ username: data.username, avatar: data.avatarUrl || data.avatar });
     return data;
   }, []);
 

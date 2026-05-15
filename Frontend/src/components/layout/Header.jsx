@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, CheckCheck, X, Calendar, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Search, Bell, BellRing, ChevronDown, CheckCheck, X, Calendar, ArrowUp, ArrowDown, Minus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useSelector } from 'react-redux';
@@ -20,6 +20,7 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [showUserDropdown, setShowUserDropdown] = React.useState(false);
+  const [swipedId, setSwipedId] = React.useState(null);  // id đang reveal delete
   const dropdownRef = React.useRef(null);
   const userDropdownRef = React.useRef(null);
 
@@ -160,6 +161,21 @@ const Header = () => {
     }
   };
 
+  // Xóa thông báo
+  const handleDeleteNotification = async (e, notifId) => {
+    e.stopPropagation();
+    try {
+      await notificationApi.deleteById(notifId);
+      const deleted = notifications.find(n => (n.id ?? n.Id) === notifId);
+      const wasUnread = deleted && !(deleted.isRead ?? deleted.IsRead);
+      setNotifications(prev => prev.filter(n => (n.id ?? n.Id) !== notifId));
+      if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+      setSwipedId(null);
+    } catch (err) {
+      console.error('Failed to delete notification', err);
+    }
+  };
+
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -259,20 +275,33 @@ const Header = () => {
                   const isRead = notif.isRead ?? notif.IsRead;
                   const message = notif.message ?? notif.Message;
                   const createdAt = notif.createdAt ?? notif.CreatedAt;
+                  const isSwiped = swipedId === id;
                   return (
-                    <div
-                      key={id}
-                      className={`nd-item ${!isRead ? 'unread' : ''}`}
-                      onClick={() => handleNotificationClick(notif)}
-                    >
-                      <div className="nd-item-icon">
-                        <Bell size={16} color={isRead ? '#94a3b8' : '#3b82f6'} />
+                    <div key={id} className="nd-item-wrap">
+                      <div
+                        className={`nd-item ${!isRead ? 'unread' : ''} ${isSwiped ? 'swiped' : ''}`}
+                        onClick={() => { if (isSwiped) { setSwipedId(null); } else { handleNotificationClick(notif); } }}
+                        onContextMenu={e => { e.preventDefault(); setSwipedId(isSwiped ? null : id); }}
+                      >
+                        <div className="nd-item-icon">
+                          {isRead
+                            ? <Bell size={16} color="#94a3b8" />
+                            : <BellRing size={16} color="#3b82f6" />}
+                        </div>
+                        <div className="nd-item-content">
+                          <p>{(message || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}⏰🔔]/gu, '').trim()}</p>
+                          <span>{formatTime(createdAt)}</span>
+                        </div>
+                        {!isRead && <div className="nd-unread-dot" />}
                       </div>
-                      <div className="nd-item-content">
-                        <p>{message}</p>
-                        <span>{formatTime(createdAt)}</span>
-                      </div>
-                      {!isRead && <div className="nd-unread-dot" />}
+                      {/* Nút xóa trượt ra khi right-click */}
+                      <button
+                        className={`nd-delete-btn ${isSwiped ? 'visible' : ''}`}
+                        onClick={e => handleDeleteNotification(e, id)}
+                        title="Xóa thông báo"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   );
                 })}
@@ -288,6 +317,7 @@ const Header = () => {
               <img
                 src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'Guest')}&background=random`}
                 alt="User Avatar"
+                onError={(e) => { e.target.onerror = null; e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'Guest')}&background=random`; }}
               />
               <span className="user-name">{user?.username}</span>
               <ChevronDown size={14} color="#94a3b8" />

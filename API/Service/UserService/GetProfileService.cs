@@ -35,13 +35,11 @@ namespace API.Service.UserService
     
                 return new 
                 {
-                    //Success = true,
-                    //Data = userProfile,
-                    //Message = "User profile retrieved successfully."
                     user.UserId,
                     user.UserName,
                     user.Email,
                     user.CreatedAt,
+                    user.AvatarUrl,
                 };
         }
 

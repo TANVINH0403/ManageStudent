@@ -11,5 +11,6 @@ namespace API.Interfaces
         void Update(Notification notification);
         System.Threading.Tasks.Task SaveChangesAsync(CancellationToken ct);
         System.Threading.Tasks.Task MarkAllAsReadAsync(int userId, CancellationToken ct);
+        System.Threading.Tasks.Task<bool> DeleteAsync(int id, int userId, CancellationToken ct);
     }
 }

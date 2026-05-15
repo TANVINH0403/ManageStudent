@@ -686,7 +686,6 @@ const Tasks = () => {
                           </span>
                         )}
                       </div>
-                      <span className="task-desc">{task.description}</span>
                     </div>
                   </td>
                   <td>
@@ -803,7 +802,6 @@ const Tasks = () => {
                       )}
                     </div>
                     <div className="tgc-title">{task.title}</div>
-                    {task.description && <div className="tgc-desc">{task.description}</div>}
                     <div className="tgc-badges">
                       <span className={`badge-status ${task.status.replace(/\s/g,'')}`} style={{ fontSize:'0.72rem', padding:'3px 9px' }}>
                         {task.status === 'Completed' ? t('statusCompleted') : task.status === 'In Progress' ? t('statusInProgress') : t('statusTodo')}

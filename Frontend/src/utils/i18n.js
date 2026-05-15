@@ -231,6 +231,7 @@ export const translations = {
     priorityLow: 'Thấp', priorityMedium: 'Trung bình', priorityHigh: 'Cao',
     progressLabel: 'Tiến độ',
     taskDetails: 'Chi tiết Task',
+    markAllRead: 'Đánh dấu tất cả đã đọc',
   },
   en: {
     githubDesc: 'Source code repository and personal projects.',
@@ -463,5 +464,6 @@ export const translations = {
     priorityLow: 'Low', priorityMedium: 'Medium', priorityHigh: 'High',
     progressLabel: 'Progress',
     taskDetails: 'Task Details',
+    markAllRead: 'Mark all as read',
   },
 };

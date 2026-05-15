@@ -116,5 +116,57 @@ namespace API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost("avatar")]
+        public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken ct)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "Vui lòng chọn file ảnh." });
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+            if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                return BadRequest(new { message = "Chỉ chấp nhận file ảnh (jpg, png, webp, gif)." });
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new { message = "File không được vượt quá 5MB." });
+
+            var userId = GetUserId();
+
+            // Tạo thư mục lưu avatar
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
+            Directory.CreateDirectory(uploadsDir);
+
+            // Xóa avatar cũ nếu có
+            var user = await HttpContext.RequestServices
+                .GetRequiredService<API.Data.ApplicationDbContext>()
+                .Users.FindAsync(new object[] { userId }, ct);
+
+            if (user == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(user.AvatarUrl))
+            {
+                var oldFileName = Path.GetFileName(user.AvatarUrl);
+                var oldPath = Path.Combine(uploadsDir, oldFileName);
+                if (System.IO.File.Exists(oldPath))
+                    System.IO.File.Delete(oldPath);
+            }
+
+            // Lưu file mới
+            var ext = Path.GetExtension(file.FileName).ToLower();
+            var newFileName = $"avatar_{userId}_{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(uploadsDir, newFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream, ct);
+
+            // Cập nhật DB
+            var avatarUrl = $"/avatars/{newFileName}";
+            user.AvatarUrl = avatarUrl;
+            await HttpContext.RequestServices
+                .GetRequiredService<API.Data.ApplicationDbContext>()
+                .SaveChangesAsync(ct);
+
+            return Ok(new { avatarUrl });
+        }
     }
 }
