@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// Cấu hình base URL (Sau này đổi thành localhost của .NET hoặc domain thật)
+// Cấu hình base URL (Lấy từ biến môi trường của Vite, fallback về localhost)
 const axiosClient = axios.create({
-  baseURL: 'http://localhost:5050/api', // Port backend .NET đang chạy
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5050/api', // Port backend .NET
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',

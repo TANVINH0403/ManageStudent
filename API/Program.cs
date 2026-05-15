@@ -125,6 +125,12 @@ namespace API
                         ALTER TABLE ""Notifications"" ALTER COLUMN ""TaskId"" DROP NOT NULL;
                     ");
                 } catch { }
+
+                try {
+                    db.Database.ExecuteSqlRaw(@"
+                        ALTER TABLE ""Users"" ADD COLUMN IF NOT EXISTS ""AvatarUrl"" TEXT;
+                    ");
+                } catch { }
             }
 
             app.Run();
