@@ -114,23 +114,32 @@ namespace API
             {
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 db.Database.EnsureCreated();
-                try {
-                    db.Database.ExecuteSqlRaw(@"
-                        ALTER TABLE ""Tasks"" ADD COLUMN IF NOT EXISTS ""Progress"" integer NOT NULL DEFAULT 0;
-                    ");
-                } catch { }
+                var dbProv = app.Configuration["DatabaseProvider"];
 
-                try {
-                    db.Database.ExecuteSqlRaw(@"
-                        ALTER TABLE ""Notifications"" ALTER COLUMN ""TaskId"" DROP NOT NULL;
-                    ");
-                } catch { }
+                if (dbProv == "PostgreSQL")
+                {
+                    try { db.Database.ExecuteSqlRaw(@"ALTER TABLE ""Tasks"" ADD COLUMN IF NOT EXISTS ""Progress"" integer NOT NULL DEFAULT 0;"); } catch { }
+                    try { db.Database.ExecuteSqlRaw(@"ALTER TABLE ""Notifications"" ALTER COLUMN ""TaskId"" DROP NOT NULL;"); } catch { }
+                    try { db.Database.ExecuteSqlRaw(@"ALTER TABLE ""Users"" ADD COLUMN IF NOT EXISTS ""AvatarUrl"" TEXT;"); } catch { }
+                }
+                else
+                {
+                    try { 
+                        db.Database.ExecuteSqlRaw(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Tasks' AND COLUMN_NAME = 'Progress')
+                            BEGIN ALTER TABLE [Tasks] ADD [Progress] INT NOT NULL DEFAULT 0; END
+                        "); 
+                    } catch { }
 
-                try {
-                    db.Database.ExecuteSqlRaw(@"
-                        ALTER TABLE ""Users"" ADD COLUMN IF NOT EXISTS ""AvatarUrl"" TEXT;
-                    ");
-                } catch { }
+                    try { db.Database.ExecuteSqlRaw(@"ALTER TABLE [Notifications] ALTER COLUMN [TaskId] INT NULL;"); } catch { }
+
+                    try { 
+                        db.Database.ExecuteSqlRaw(@"
+                            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Users' AND COLUMN_NAME = 'AvatarUrl')
+                            BEGIN ALTER TABLE [Users] ADD [AvatarUrl] NVARCHAR(MAX) NULL; END
+                        "); 
+                    } catch { }
+                }
             }
 
             app.Run();
