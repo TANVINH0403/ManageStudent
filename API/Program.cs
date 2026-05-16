@@ -54,7 +54,7 @@ namespace API
 
             var dbProvider = builder.Configuration["DatabaseProvider"];
             var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-
+         
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
                 if (dbProvider == "PostgreSQL")
