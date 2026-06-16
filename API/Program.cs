@@ -90,7 +90,12 @@ namespace API
                     await ctx.Response.WriteAsJsonAsync(new { message = msg, detail = ex?.ToString() });
                 });
             });
-            app.UseHttpsRedirection();
+            // Only redirect to HTTPS if HTTPS is configured (skip in Docker HTTP-only mode)
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"))
+                || (Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Contains("https") ?? false))
+            {
+                app.UseHttpsRedirection();
+            }
             app.UseRouting();
             app.UseCors("AllowFrontend");
             // Phục vụ wwwroot/avatars/ với CORS header
