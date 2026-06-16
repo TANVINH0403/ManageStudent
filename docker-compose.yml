@@ -2,16 +2,15 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:17
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: managestudent-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "1" # Password hiện tại của bạn trong appsettings.Development.json
-      POSTGRES_DB: ManageStudentDb
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "YourPassword123!"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - sqldata:/var/opt/mssql
     restart: unless-stopped
 
   api:
@@ -24,8 +23,8 @@ services:
     ports:
       - "5050:8080"
     environment:
-      - DatabaseProvider=PostgreSQL
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=ManageStudentDb;Username=postgres;Password=1
+      - DatabaseProvider=SqlServer
+      - ConnectionStrings__DefaultConnection=Server=db;Database=ManageStudentDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True
       # Khai báo cấu hình JWT tuỳ chỉnh nếu cần, nếu không nó sẽ lấy từ appsettings.json
     volumes:
       - api-avatars:/app/wwwroot/avatars
@@ -44,6 +43,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata:
+  sqldata:
   api-avatars:
   api-uploads:
