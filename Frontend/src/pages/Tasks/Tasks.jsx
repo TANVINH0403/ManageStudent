@@ -476,12 +476,16 @@ const Tasks = () => {
     if (!editTask) return;
     setSaving(true);
     const result = await dispatch(updateTask({ id: editTask.id, data: editTask }));
-    setSaving(false);
-    // Sync activeTask from Redux store (has fresh data from re-fetch)
-    if (result.payload && Array.isArray(result.payload)) {
-      const updated = result.payload.find(t => t.id === editTask.id);
-      if (updated) setActiveTask({ ...updated, notes: editTask.notes ?? [] });
+    
+    // Refresh subtasks if the edited task is a subtask
+    if (editTask.parentId) {
+      dispatch(fetchSubTasks(editTask.parentId));
     }
+
+    setSaving(false);
+    
+    // Đóng bảng chi tiết sau khi lưu thành công
+    setActiveTask(null);
   };
 
   const handleAddNote = () => {

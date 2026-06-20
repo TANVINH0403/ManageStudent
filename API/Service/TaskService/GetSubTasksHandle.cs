@@ -1,4 +1,4 @@
-﻿using API.Dtos.Task;
+using API.Dtos.Task;
 using API.Interfaces;
 
 namespace API.Service.TaskService
@@ -33,7 +33,9 @@ namespace API.Service.TaskService
                 DueDate = t.DueDate,
                 Status = t.Status,
                 Priority = t.Priority,
-                HasSubtasks = taskHasChildrent.Contains(t.TaskId)
+                HasSubtasks = taskHasChildrent.Contains(t.TaskId),
+                Progress = t.Progress,
+                ParentId = t.ParentId
             }).ToList();
         }
     }
